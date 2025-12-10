@@ -1,0 +1,32 @@
+[
+  {
+    "w": "maison",
+    "p": "MZN",
+    "g": "n.f.",
+    "i": ""
+  },
+  {
+    "w": "manger",
+    "p": "MANJR",
+    "g": "v.",
+    "i": ""
+  },
+  {
+    "w": "oiseau",
+    "p": "OAZO",
+    "g": "n.m.",
+    "i": "images/oiseau.png"
+  },
+  {
+    "w": "femme",
+    "p": "FAM",
+    "g": "n.f.",
+    "i": ""
+  },
+  {
+    "w": "rythme",
+    "p": "RITM",
+    "g": "n.m.",
+    "i": ""
+  }
+]
