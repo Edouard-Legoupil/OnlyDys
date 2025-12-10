@@ -105,7 +105,25 @@
         return suggestions;
     }
 
-    window.Asc.plugin.onIntegrationReady = function() {
-        loadDictionary();
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    const handleInput = debounce(() => {
+        window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
+            if (word && word.trim().length > 2) {
+                const suggestions = trouverSuggestions(word.trim());
+                console.log('Suggestions for "' + word.trim() + '":', suggestions);
+            }
+        });
+    }, 500);
+
+    window.Asc.plugin.onIntegrationReady = async function() {
+        await loadDictionary();
+        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Add", [handleInput]);
     };
 })();
