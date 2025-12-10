@@ -2,9 +2,75 @@
 <html>
 <head>
     <title>OnlyDys</title>
+    <meta charset="UTF-8">
     <script type="text/javascript" src="https://onlyoffice.github.io/sdk/docs/api/v7.1/plugins/api.js"></script>
     <script type="text/javascript" src="src/plugin.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        #suggestions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .suggestion-card {
+            display: grid;
+            grid-template-areas:
+                "word read-btn"
+                "illustration illustration";
+            grid-template-columns: 1fr auto;
+            gap: 5px 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+        .suggestion-card:hover {
+            background-color: #e9e9e9;
+        }
+        .word {
+            grid-area: word;
+            font-size: 16px;
+            font-weight: bold;
+            align-self: center;
+        }
+        .read-btn {
+            grid-area: read-btn;
+            padding: 5px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .illustration {
+            grid-area: illustration;
+            width: 100%;
+            height: auto;
+            max-height: 100px;
+            object-fit: contain;
+            margin-top: 5px;
+            display: none; /* Hidden by default, will be shown if an image URL exists */
+        }
+    </style>
 </head>
 <body>
+    <div id="suggestions-container">
+        <!-- Les suggestions seront ajoutées ici dynamiquement par le plugin.js -->
+    </div>
+
+    <script>
+        // Placeholder function for the text-to-speech feature
+        function lireMot(word) {
+            console.log("Lecture du mot :", word);
+            // Future implementation will use a text-to-speech API
+        }
+    </script>
 </body>
 </html>

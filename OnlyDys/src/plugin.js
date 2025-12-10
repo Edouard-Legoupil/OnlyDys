@@ -84,14 +84,11 @@
         return matrix[b.length][a.length];
     }
 
-    function replaceCurrentWord(wordToInsert) {
-        window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
-            if (word && word.trim().length > 0) {
-                // Ensure there's a space after the inserted word
-                const contentToPaste = wordToInsert + ' ';
-                window.Asc.plugin.executeMethod("PasteContent", [contentToPaste]);
-            }
-        });
+    // Expose the function to the global scope so it can be called from index.html
+    window.replaceCurrentWord = function(wordToInsert) {
+        // Ensure there's a space after the inserted word
+        const contentToPaste = wordToInsert + ' ';
+        window.Asc.plugin.executeMethod("PasteContent", [contentToPaste]);
     }
 
     function trouverSuggestions(motSaisi) {
@@ -115,6 +112,45 @@
         return suggestions;
     }
 
+    function displaySuggestions(suggestions) {
+        const container = document.getElementById('suggestions-container');
+        if (!container) return;
+
+        // Clear previous suggestions
+        container.innerHTML = '';
+
+        suggestions.forEach(suggestion => {
+            const card = document.createElement('div');
+            card.className = 'suggestion-card';
+            card.onclick = () => replaceCurrentWord(suggestion.w);
+
+            const wordSpan = document.createElement('span');
+            wordSpan.className = 'word';
+            wordSpan.textContent = suggestion.w;
+
+            const readBtn = document.createElement('button');
+            readBtn.className = 'read-btn';
+            readBtn.innerHTML = '🔊';
+            readBtn.onclick = (e) => {
+                e.stopPropagation();
+                lireMot(suggestion.w);
+            };
+
+            const illustration = document.createElement('img');
+            illustration.className = 'illustration';
+            illustration.alt = 'Illustration';
+            if (suggestion.i) {
+                illustration.src = suggestion.i;
+                illustration.style.display = 'block';
+            }
+
+            card.appendChild(wordSpan);
+            card.appendChild(readBtn);
+            card.appendChild(illustration);
+            container.appendChild(card);
+        });
+    }
+
     function debounce(func, delay) {
         let timeout;
         return function(...args) {
@@ -127,13 +163,13 @@
         window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
             if (word && word.trim().length > 2) {
                 const suggestions = trouverSuggestions(word.trim());
-                if (suggestions.length > 0) {
-                    // Automatically insert the best suggestion for demonstration purposes
-                    replaceCurrentWord(suggestions[0].w);
-                }
+                displaySuggestions(suggestions);
+            } else {
+                // Clear suggestions if the word is too short
+                displaySuggestions([]);
             }
         });
-    }, 500);
+    }, 300);
 
     window.Asc.plugin.onIntegrationReady = async function() {
         await loadDictionary();
