@@ -84,6 +84,16 @@
         return matrix[b.length][a.length];
     }
 
+    function replaceCurrentWord(wordToInsert) {
+        window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
+            if (word && word.trim().length > 0) {
+                // Ensure there's a space after the inserted word
+                const contentToPaste = wordToInsert + ' ';
+                window.Asc.plugin.executeMethod("PasteContent", [contentToPaste]);
+            }
+        });
+    }
+
     function trouverSuggestions(motSaisi) {
         if (!motSaisi || typeof motSaisi !== 'string' || !dictionary.length) {
             return [];
@@ -117,7 +127,10 @@
         window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
             if (word && word.trim().length > 2) {
                 const suggestions = trouverSuggestions(word.trim());
-                console.log('Suggestions for "' + word.trim() + '":', suggestions);
+                if (suggestions.length > 0) {
+                    // Automatically insert the best suggestion for demonstration purposes
+                    replaceCurrentWord(suggestions[0].w);
+                }
             }
         });
     }, 500);
