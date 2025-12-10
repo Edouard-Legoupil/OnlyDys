@@ -1,31 +1,31 @@
 [
   {
     "w": "maison",
-    "p": "MZN",
+    "p": "M250",
     "g": "n.f.",
     "i": ""
   },
   {
     "w": "manger",
-    "p": "MANJR",
+    "p": "M526",
     "g": "v.",
     "i": ""
   },
   {
     "w": "oiseau",
-    "p": "OAZO",
+    "p": "O200",
     "g": "n.m.",
     "i": "images/oiseau.png"
   },
   {
     "w": "femme",
-    "p": "FAM",
+    "p": "F500",
     "g": "n.f.",
     "i": ""
   },
   {
     "w": "rythme",
-    "p": "RITM",
+    "p": "R350",
     "g": "n.m.",
     "i": ""
   }
