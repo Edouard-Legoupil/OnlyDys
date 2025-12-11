@@ -38,6 +38,13 @@
 
     window.Asc.plugin.onIntegrationReady = async function() {
         await window.OnlyDysLogic.loadDictionary();
+        window.OnlyDysStyles.displayColorLegend();
+
+        document.getElementById('apply-style-button').addEventListener('click', function() {
+            window.OnlyDysStyles.applyStyleToDocument();
+            window.OnlyDysStyles.colorCodeDocument();
+        });
+
         window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Add", [handleInput]);
     };
 
