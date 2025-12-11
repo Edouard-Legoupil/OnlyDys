@@ -16,11 +16,22 @@
     const handleInput = debounce(() => {
         window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
             if (word && word.trim().length > 2) {
-                const suggestions = window.OnlyDysLogic.trouverSuggestions(word.trim());
-                window.OnlyDysLogic.displaySuggestions(suggestions);
+                window.Asc.plugin.executeMethod("GetSelection", [], function(selection) {
+                    const motSaisi = word.trim();
+                    let motPrecedent = null;
+                    if (selection && selection.end > 0) {
+                        const range = Api.GetDocument().GetRange(0, selection.end - motSaisi.length);
+                        const text = range.GetText();
+                        const words = text.split(/\s+/);
+                        motPrecedent = words.length > 1 ? words[words.length - 2] : null;
+                    }
+                    
+                    const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
+                    window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi);
+                });
             } else {
                 // Clear suggestions if the word is too short
-                window.OnlyDysLogic.displaySuggestions([]);
+                window.OnlyDysLogic.displaySuggestions([], null);
             }
         });
     }, 300);
