@@ -71,6 +71,6 @@ The plugin includes a suite of unit tests to ensure that the core logic is worki
 
 ## Dev
 
-The primary user is my daughter, Lisa, and its school in Normandy. Thought, it might support as well other kids with same challenges. 
+The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Thought, this tool might support other kids with same challenges as well. 
 
 If you spot any issue or have any ideas of additional features or capabilities, please [create an issue here](https://github.com/Edouard-Legoupil/OnlyDys/issues/new).
