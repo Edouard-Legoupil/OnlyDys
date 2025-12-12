@@ -170,10 +170,12 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
         return { type: 'Unknown', color: 'Gray', icon: '❓' };
     }
 
-    logic.displaySuggestions = function(suggestions, motSaisi) {
+    logic.displaySuggestions = function(suggestions, motSaisi, append = false) {
         const container = document.getElementById('suggestions-container');
         if (!container) return;
-        container.innerHTML = '';
+        if (!append) {
+            container.innerHTML = '';
+        }
         suggestions.forEach(suggestion => {
             const confusion = classifyConfusion(motSaisi, suggestion);
             const card = document.createElement('div');

@@ -9,47 +9,10 @@
         };
     }
 
-    // The function that handles input changes in the document
-    const handleInput = debounce(() => {
-        // Get the word at the current cursor position
-        window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
-            if (word && word.trim().length > 2) {
-                const motSaisi = word.trim();
-                // Getting the preceding word is complex.
-                // For now, we'll proceed without it to ensure the plugin loads.
-                let motPrecedent = null;
-
-                const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
-                window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi);
-            } else {
-                // Clear suggestions if the word is too short or empty
-                window.OnlyDysLogic.displaySuggestions([], null);
-            }
-        });
-    }, 300); // 300ms debounce delay
-
-    // Function to handle text selection changes
-    const handleSelectionChange = debounce(() => {
-        window.Asc.plugin.executeMethod("GetSelectedText", [], function(text) {
-            if (text && text.trim().length > 2) {
-                const motSaisi = text.trim();
-                let motPrecedent = null; // Précédent word logic might be complex here as well
-
-                const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
-                window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi);
-            }
-        });
-    }, 300);
-
     // Function to load tab content
     async function loadTab(tabName) {
         const tabContent = document.getElementById('tab-content');
         if (!tabContent) return;
-
-        // Remove the suggestions listener before switching tabs
-        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Remove", [handleInput]);
-        // Also remove the selection change listener
-        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentSelectionChange.Remove", [handleSelectionChange]);
 
         try {
             const response = await fetch(`${tabName}.html`);
@@ -76,10 +39,45 @@
     }
 
     function initSuggestionsTab() {
-        // Add the event listener for document content changes for the suggestions tab
-        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Add", [handleInput]);
-        // Add the event listener for document selection changes
-        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentSelectionChange.Add", [handleSelectionChange]);
+        const pasteSelectionButton = document.getElementById('paste-selection');
+        if (pasteSelectionButton) {
+            pasteSelectionButton.addEventListener('click', function() {
+                window.Asc.plugin.executeMethod("GetSelectedText", [], function(text) {
+                    if (text) {
+                        document.getElementById('textarea').innerText = text;
+                    }
+                });
+            });
+        }
+
+        const checkTextButton = document.getElementById('check-text-button');
+        if (checkTextButton) {
+            checkTextButton.addEventListener('click', function() {
+                const text = document.getElementById('textarea').innerText;
+                const container = document.getElementById('suggestions-container');
+                if (!container) return;
+                container.innerHTML = ''; // Clear previous results
+
+                if (text && text.trim().length > 0) {
+                    const words = text.trim().split(/\s+/);
+                    let motPrecedent = null;
+
+                    words.forEach((motSaisi, index) => {
+                        if (motSaisi.length > 2) { // Only check words with more than 2 characters
+                            const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
+                            if (suggestions.length > 0) {
+                                const header = document.createElement('h4');
+                                header.textContent = `Suggestions for "${motSaisi}"`;
+                                header.style.marginLeft = '12px';
+                                container.appendChild(header);
+                                window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi, true);
+                            }
+                            motPrecedent = motSaisi;
+                        }
+                    });
+                }
+            });
+        }
     }
 
     function initStyleTab() {
