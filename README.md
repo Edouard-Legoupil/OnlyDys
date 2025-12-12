@@ -46,12 +46,12 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
 
 To install the OnlyDys plugin:
 
-1.  **Download the Plugin**: Clone this repository or download it as a ZIP file.
-2.  **Locate the ONLYOFFICE Plugins Folder**:
-    - **For Desktop Editors**:
-        - **Windows**: `C:\Program Files\ONLYOFFICE\DesktopEditors\sdkjs-plugins\`
-        - **Linux**: `/opt/onlyoffice/desktopeditors/sdkjs-plugins/`
-        - **macOS**: `Applications/ONLYOFFICE.app/Contents/Resources/sdkjs-plugins/`
-    - **For Server Editions**: Follow the [official documentation](https://api.onlyoffice.com/plugin/installation) for adding plugins to your Document Server instance.
-3.  **Add the Plugin**: Copy the entire `OnlyDys` folder into the plugins directory.
-4.  **Launch ONLYOFFICE**: Open the ONLYOFFICE editor, and the OnlyDys plugin will be available in the "Plugins" tab.
+1.  **Download the Plugin**: Download this repository as a ZIP file and rename the extension as .plugin.
+2.  **Add the Plugin**: In `OnlyDys` open the plugin manager, click to "available plugin", then "install the plugin manually".
+3.  **Use in ONLYOFFICE**: the OnlyDys plugin will be available in the "Plugins" tab.
+
+## Dev
+
+The primary user is my daughter, Lisa, and its school in Normandy. Thought, it might support as well other kids with same challenges. 
+
+If you spot any issue or have any ideas of additional features or capabilities, please [create an issue here](https://github.com/Edouard-Legoupil/OnlyDys/issues/new).
