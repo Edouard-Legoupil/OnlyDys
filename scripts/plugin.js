@@ -28,6 +28,19 @@
         });
     }, 300); // 300ms debounce delay
 
+    // Function to handle text selection changes
+    const handleSelectionChange = debounce(() => {
+        window.Asc.plugin.executeMethod("GetSelectedText", [], function(text) {
+            if (text && text.trim().length > 2) {
+                const motSaisi = text.trim();
+                let motPrecedent = null; // Précédent word logic might be complex here as well
+
+                const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
+                window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi);
+            }
+        });
+    }, 300);
+
     // Function to load tab content
     async function loadTab(tabName) {
         const tabContent = document.getElementById('tab-content');
@@ -35,6 +48,8 @@
 
         // Remove the suggestions listener before switching tabs
         window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Remove", [handleInput]);
+        // Also remove the selection change listener
+        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentSelectionChange.Remove", [handleSelectionChange]);
 
         try {
             const response = await fetch(`${tabName}.html`);
@@ -63,6 +78,8 @@
     function initSuggestionsTab() {
         // Add the event listener for document content changes for the suggestions tab
         window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Add", [handleInput]);
+        // Add the event listener for document selection changes
+        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentSelectionChange.Add", [handleSelectionChange]);
     }
 
     function initStyleTab() {
