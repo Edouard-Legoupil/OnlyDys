@@ -9,17 +9,65 @@
         };
     }
 
-    // The main entry point for the plugin
-    window.Asc.plugin.init = async function() {
-        // Load the dictionary as soon as the plugin is initialized
-        await window.OnlyDysLogic.loadDictionary();
+    // The function that handles input changes in the document
+    const handleInput = debounce(() => {
+        // Get the word at the current cursor position
+        window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
+            if (word && word.trim().length > 2) {
+                const motSaisi = word.trim();
+                // Getting the preceding word is complex.
+                // For now, we'll proceed without it to ensure the plugin loads.
+                let motPrecedent = null;
 
-        // Display the color legend from the styles script
+                const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
+                window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi);
+            } else {
+                // Clear suggestions if the word is too short or empty
+                window.OnlyDysLogic.displaySuggestions([], null);
+            }
+        });
+    }, 300); // 300ms debounce delay
+
+    // Function to load tab content
+    async function loadTab(tabName) {
+        const tabContent = document.getElementById('tab-content');
+        if (!tabContent) return;
+
+        // Remove the suggestions listener before switching tabs
+        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Remove", [handleInput]);
+
+        try {
+            const response = await fetch(`${tabName}.html`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            tabContent.innerHTML = await response.text();
+
+            // Initialize the specific tab's functionality
+            if (tabName === 'suggestions') {
+                initSuggestionsTab();
+            } else if (tabName === 'style') {
+                initStyleTab();
+            } else if (tabName === 'font') {
+                initFontTab();
+            }
+
+        } catch (error) {
+            console.error('Error loading tab:', error);
+            tabContent.innerHTML = '<p>Error loading content.</p>';
+        }
+    }
+
+    function initSuggestionsTab() {
+        // Add the event listener for document content changes for the suggestions tab
+        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Add", [handleInput]);
+    }
+
+    function initStyleTab() {
+        // Display the color legend and add event listener for the style button
         if (window.OnlyDysStyles && window.OnlyDysStyles.displayColorLegend) {
             window.OnlyDysStyles.displayColorLegend();
         }
-
-        // Add event listener for the style application button
         const applyStyleButton = document.getElementById('apply-style-button');
         if (applyStyleButton) {
             applyStyleButton.addEventListener('click', function() {
@@ -29,28 +77,59 @@
                 }
             });
         }
+    }
 
-        // The function that handles input changes in the document
-        const handleInput = debounce(() => {
-            // Get the word at the current cursor position
-            window.Asc.plugin.executeMethod("GetWordFromPosition", [], function(word) {
-                if (word && word.trim().length > 2) {
-                    const motSaisi = word.trim();
-                    // Getting the preceding word is complex.
-                    // For now, we'll proceed without it to ensure the plugin loads.
-                    let motPrecedent = null;
-
-                    const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
-                    window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi);
-                } else {
-                    // Clear suggestions if the word is too short or empty
-                    window.OnlyDysLogic.displaySuggestions([], null);
-                }
+    function initFontTab() {
+        // Logic for the font tab will be added in the next step
+        const checkFontButton = document.getElementById('check-font-button');
+        if (checkFontButton) {
+            checkFontButton.addEventListener('click', function() {
+                // Re-run the font check
+                checkFont();
             });
-        }, 300); // 300ms debounce delay
+        }
+        checkFont();
+    }
 
-        // Add the event listener for document content changes
-        window.Asc.plugin.executeMethod("Asc.Api.events.onDocumentContentChange.Add", [handleInput]);
+    function checkFont() {
+        window.Asc.plugin.callCommand(function() {
+            var oDocument = Api.GetDocument();
+            var oPara = Api.CreateParagraph();
+            oPara.AddText("font check");
+            oDocument.InsertContent([oPara], true);
+            var oRange = oPara.GetRange(0, -1);
+            oRange.SetHidden(true);
+            oRange.SetFontFamily("OpenDyslexic");
+            var sFontFamily = oRange.GetFontFamily();
+            oPara.Delete();
+
+            var fontStatus = document.getElementById('font-status');
+            if (sFontFamily === "OpenDyslexic") {
+                fontStatus.innerHTML = '<p style="color: green;">The "OpenDyslexic" font is correctly installed and active.</p>';
+                document.getElementById('font-instructions').style.display = 'none';
+            } else {
+                fontStatus.innerHTML = '<p style="color: red;">The "OpenDyslexic" font is not installed. Please follow the instructions below.</p>';
+                document.getElementById('font-instructions').style.display = 'block';
+            }
+        }, false, true);
+    }
+
+
+    // The main entry point for the plugin
+    window.Asc.plugin.init = async function() {
+        await window.OnlyDysLogic.loadDictionary();
+
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                loadTab(button.dataset.tab);
+            });
+        });
+
+        // Load the suggestions tab by default
+        loadTab('suggestions');
     };
 
     // Handle plugin button click to close the plugin
