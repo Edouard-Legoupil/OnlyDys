@@ -33,7 +33,7 @@
             }
 
         } catch (error) {
-            console.error('Error loading tab:', error);
+            logger.error('Error loading tab:', error);
             tabContent.innerHTML = '<p>Error loading content.</p>';
         }
     }
@@ -70,7 +70,7 @@
                                 header.textContent = `Suggestions for "${motSaisi}"`;
                                 header.style.marginLeft = '12px';
                                 container.appendChild(header);
-                                window.OnlyDysLogic.displaySuggestions(suggestions, motSaisi, true);
+                                window.OnlyDysUI.displaySuggestions(suggestions, motSaisi, true);
                             }
                             motPrecedent = motSaisi;
                         }
