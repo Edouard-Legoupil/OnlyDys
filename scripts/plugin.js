@@ -50,6 +50,8 @@
                 initStyleTab();
             } else if (tabName === 'font') {
                 initFontTab();
+            } else if (tabName === 'dyslexia') {
+                initDyslexiaTab();
             }
 
         } catch (error) {
@@ -89,6 +91,19 @@
             });
         }
         checkFont();
+    }
+    function initDyslexiaTab() {
+        const dyslexiaButton = document.getElementById('dyslexia-button');
+        if (dyslexiaButton) {
+            dyslexiaButton.addEventListener('click', function() {
+                window.Asc.plugin.executeMethod("GetSelectedText", [], function(text) {
+                    if (text) {
+                        const processedText = window.OnlyDysDyslexia.processText(text);
+                        window.Asc.plugin.executeMethod("PasteContent", [processedText]);
+                    }
+                });
+            });
+        }
     }
 
     function checkFont() {
