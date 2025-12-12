@@ -9,7 +9,12 @@
     <script type="text/javascript" src="scripts/code.js"></script>
     <script type="text/javascript" src="scripts/style.js"></script>
     <script type="text/javascript" src="scripts/plugin.js"></script>
-    <link rel="stylesheet" href="styles/style.css">
+
+    <link rel="stylesheet" href="resources/css/plugin_style.css">
+
+    <link rel="stylesheet" href="vendor/select2-4.0.13/css/select2.css"/>
+    <script src="vendor/select2-4.0.13/js/select2.js"></script>    
+    
     <style>
         body {
             font-family: 'OpenDyslexic', Arial, sans-serif;
@@ -63,9 +68,117 @@
             margin-top: 5px;
             display: none; /* Hidden by default, will be shown if an image URL exists */
         }
+		.unselectable {
+		  -webkit-touch-callout: none; /* iOS Safari */
+		  -webkit-user-select: none;   /* Chrome/Safari/Opera */
+		  -khtml-user-select: none;    /* Konqueror */
+		  -moz-user-select: none;      /* Firefox */
+		  -ms-user-select: none;       /* Internet Explorer/Edge */
+		  user-select: none;           /* Non-prefixed version, currently
+										  not supported by any browser */
+		}
+		.details {
+			display:none;
+			margin: 8px 12px 0 12px;
+			width: calc(100% - 24px) !important;
+		}
+		.arrow_container {
+			display:flex;
+			margin-right: 8px;
+		}
+		.arrow {
+			align-self: center;
+		}
+		.caption_text {
+			width: 90%;
+			margin: 0 4px 17px 4px;
+		}
+		.dismiss_buttons {
+			margin: 14px 0 16px 0;
+			display: flex;
+			justify-content: center;
+		}
+		.dismiss {
+			margin-right: 5px;
+		}
+		.display-none {
+		   display: none;
+		}
+		.separator {
+			margin-bottom: 4px;
+			width: calc(100% - 24px) !important;
+			margin: 0 12px 0 12px;
+		}
+		#button_wrapper {
+			display: flex;
+			justify-content: space-between;
+		}
+		.btn-text-default {
+			display: flex;
+   			align-items: center;
+    		justify-content: center;
+		}
+		#check {
+        	width:40%;
+        	margin-left: 12px;
+        	margin-top: 16px;
+        	text-align: center;
+        }
+		#replace {
+			float: right;
+			width:40%;
+        	margin-right: 12px;
+        	margin-top: 16px;
+        	text-align: center;
+        }
+		.replacment {
+        	border-color: #009900 !important;
+        }
+        i {
+            border: solid black;
+            border-width: 0 1px 1px 0;
+            display: inline-block;
+            padding: 2px;
+        }
+        .down {
+            transform: rotate(45deg);
+            -webkit-transform: rotate(45deg);
+            margin-top: -20px;
+        }
+        .up {
+            transform: rotate(-135deg);
+            -webkit-transform: rotate(-135deg);
+            margin-top: -14px;
+        }
+        .ps__rail-y {
+			cursor: default !important;
+		}
+		#hide_show {
+            width: 130px;
+            margin-top: 10px !important;
+        }
+		#expand, #collapse {
+            cursor:pointer;
+            border-bottom: 1px dashed #444444;
+        }
+		.miniText {
+    		margin: 0 4px 17px 4px;
+			width: 90%;
+		}
+		.hidden {
+			display: none !important;
+		}        
     </style>
 </head>
-<body>
+<body class='body' style="margin: 0; display: flex; flex-direction: column;">
+    <div id="loader-container" class="asc-plugin-loader display-none">
+        <div class="asc-loader-image">
+            <div class="asc-loader-title"></div>
+        </div>
+        <div class="asc-loader-title i18n">
+            Checking...
+        </div>
+    </div>
     <button id="apply-style-button" class="bodyLarge">Appliquer le style au document</button>
     <div id="color-legend" class="color-legend"></div>
     <hr>
