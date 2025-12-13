@@ -12,4 +12,6 @@ License File:   jQuery.license
 License:        MIT
 License File:   Select2.license
 
+3. Thanks to https://github.com/L1fescape/dyslexia for the dyslexia simulation code. 
+
 
