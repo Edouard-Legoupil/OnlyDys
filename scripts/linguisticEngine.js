@@ -42,7 +42,7 @@
     ];
 
     const SILENT_ENDINGS = [
-        "e", "es", "ent", "s", "t", "d", "p", "x"
+        "ent", "es", "e", "s", "t", "d", "p", "x"
     ];
 
     const LinguisticEngine = {
@@ -76,7 +76,7 @@
         },
 
         /**
-         * Checks if a character is punctuation (Unicode aware).
+         * Checks if a character is a punctuation (Unicode aware).
          * @param {string} char 
          * @returns {boolean}
          */
@@ -218,33 +218,28 @@
          * @returns {number[]} Array of indices of silent letters
          */
         detectSilentLetters: function (word) {
+            if (!word) return [];
             const silentIndexes = [];
-            const normalized = this.normalizeFrench(word);
 
-            // Check endings
+            // Basic normalization mainly for casing. 
+            // We assume 1:1 mapping for indices for now (standard French chars).
+            const lower = word.toLowerCase();
+
             for (const end of SILENT_ENDINGS) {
-                if (normalized.endsWith(end) && normalized.length > end.length) {
-                    const startIndex = word.length - end.length;
+                if (lower.endsWith(end) && lower.length > end.length) {
+                    const startIndex = lower.length - end.length;
 
-                    // Specific check for 'ent' which is only silent for verbs (3rd person plural)
-                    // This is a naive heuristic since we don't have POS tagging. 
-                    // We might assume 'ent' at end is silent for now or skip it if too risky.
-                    // For safety in this "plugin" context without full dictionary, we might apply it.
+                    if (startIndex < 0) continue;
 
-                    for (let i = startIndex; i < word.length; i++) {
-                        // Avoid duplicates if multiple endings match (e.g. 's' and 'es')
-                        // We take the longest match implicitly if we iterate all? 
-                        // Actually, just pushing them might duplicate.
-                        if (!silentIndexes.includes(i)) {
+                    for (let i = startIndex; i < lower.length; i++) {
+                        if (silentIndexes.indexOf(i) === -1) {
                             silentIndexes.push(i);
                         }
                     }
-                    // Break after finding one valid ending to avoid overlapping weirdness? 
-                    // 'es' matches 's' too.
                     break;
                 }
             }
-            return silentIndexes.sort((a, b) => a - b);
+            return silentIndexes.sort(function (a, b) { return a - b; });
         },
 
         /**
