@@ -50,6 +50,25 @@ To install the OnlyDys plugin:
 2.  **Add the Plugin**: In `OnlyDys` open the plugin manager, click to "available plugin", then "install the plugin manually".
 3.  **Use in ONLYOFFICE**: the OnlyDys plugin will be available in the "Plugins" tab.
 
+## Debugging
+
+The OnlyDys plugin includes a logging framework and a suite of unit tests to aid in debugging and development.
+
+### Viewing Logs
+
+The plugin uses a custom logger to output debugging information to the browser's console. To view the logs, you'll need to open the developer tools in your browser.
+
+1.  **Open the developer tools.** In most browsers, you can do this by pressing `F12` or by right-clicking on the page and selecting "Inspect".
+2.  **Navigate to the console.** The console is where the plugin will output its logs.
+3.  **Set the log level.** By default, the logger is set to the `INFO` level. You can change the log level by opening the console and typing `logger.setLevel(logger.LogLevel.DEBUG)`. This will enable all logging levels.
+
+### Running Unit Tests
+
+The plugin includes a suite of unit tests to ensure that the core logic is working correctly. To run the tests, you'll need to open the `tests/test.html` file in your browser.
+
+1.  **Navigate to the `tests/` directory.**
+2.  **Open the `test.html` file in your browser.** This will run the tests and display the results in the browser.
+
 ## Dev
 
 The primary user is my daughter, Lisa, and its school in Normandy. Thought, it might support as well other kids with same challenges. 

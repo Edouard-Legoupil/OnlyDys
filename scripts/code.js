@@ -11,9 +11,9 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
                 throw new Error('Network response was not ok: ' + response.statusText);
             }
             dictionary = await response.json();
-            console.log('Dictionary loaded successfully:', dictionary.length, 'words');
+            logger.info('Dictionary loaded successfully', { wordCount: dictionary.length });
         } catch (error) {
-            console.error('Error loading dictionary:', error);
+            logger.error('Error loading dictionary:', error);
         }
     };
 
@@ -151,7 +151,7 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
         }
 
         // Phonetic substitution (f/v, s/z check)
-        const phoneticSubstitutions = { 'f': 'v', 'v': 'f', 's': 'z', 'z': 's' };
+        const phoneticSubstitutions = { 'f': 'v', 'v': 'f', 's': 'z', 'z': 's', 'h': 'j', 'j': 'h' };
         for (let i = 0; i < motSaisi.length; i++) {
             if (phoneticSubstitutions[motSaisi[i]] && suggestion.w.includes(phoneticSubstitutions[motSaisi[i]])) {
                  const regex = new RegExp(phoneticSubstitutions[motSaisi[i]], 'g');
@@ -170,55 +170,10 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
         return { type: 'Unknown', color: 'Gray', icon: '❓' };
     }
 
-    logic.displaySuggestions = function(suggestions, motSaisi, append = false) {
-        const container = document.getElementById('suggestions-container');
-        if (!container) return;
-        if (!append) {
-            container.innerHTML = '';
-        }
-        suggestions.forEach(suggestion => {
-            const confusion = classifyConfusion(motSaisi, suggestion);
-            const card = document.createElement('div');
-            card.className = 'suggestion-card';
-            card.style.borderLeft = `5px solid ${confusion.color}`;
-            card.onclick = () => window.replaceCurrentWord(suggestion.w); // Uses the global function
-            
-            const confusionIcon = document.createElement('span');
-            confusionIcon.className = 'confusion-icon';
-            confusionIcon.textContent = confusion.icon;
-            
-            const wordSpan = document.createElement('span');
-            wordSpan.className = 'word';
-            wordSpan.textContent = suggestion.w;
-
-            const readBtn = document.createElement('button');
-            readBtn.className = 'read-btn';
-            readBtn.innerHTML = '🔊';
-            readBtn.onclick = (e) => {
-                e.stopPropagation();
-                window.lireMot(suggestion.w);
-            };
-
-            const illustration = document.createElement('img');
-            illustration.className = 'illustration';
-            illustration.alt = 'Illustration';
-            if (suggestion.i) {
-                illustration.src = suggestion.i;
-                illustration.style.display = 'block';
-            }
-
-            card.appendChild(confusionIcon);
-            card.appendChild(wordSpan);
-            card.appendChild(readBtn);
-            card.appendChild(illustration);
-            container.appendChild(card);
-        });
-    };
+    logic.classifyConfusion = classifyConfusion;
+    logic.getPhoneticCode = getPhoneticCode;
+    logic.levenshteinDistance = levenshteinDistance;
+    logic.getCategorieAttendue = getCategorieAttendue;
+    logic.calculerScoreOrthographique = calculerScoreOrthographique;
 
 })(window.OnlyDysLogic);
-
-// Expose the function to the global scope so it can be called from index.html
-window.replaceCurrentWord = function(wordToInsert) {
-    const contentToPaste = wordToInsert + ' ';
-    window.Asc.plugin.executeMethod("PasteContent", [contentToPaste]);
-};
