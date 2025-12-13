@@ -22,8 +22,8 @@
 				"slide"
 			],
 			"isVisual": true,
-			"isModal": true,
-			"isInsideMode": true,
+			"isModal": false,
+			"isInsideMode": false,
 			"initDataType": "text",
 			"initData": "",
 			"isUpdateOleOnResize": false,
