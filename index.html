@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>OnlyDys</title>
     <meta charset="UTF-8">
@@ -11,6 +12,11 @@
     <script type="text/javascript" src="scripts/ui.js"></script>
     <script type="text/javascript" src="scripts/style.js"></script>
     <script type="text/javascript" src="scripts/dyslexia.js"></script>
+    <script type="text/javascript" src="scripts/linguisticEngine.js"></script>
+    <script type="text/javascript" src="scripts/colorizationEngine.js"></script>
+    <script type="text/javascript" src="scripts/arcRenderer.js"></script>
+    <script type="text/javascript" src="scripts/selectionManager.js"></script>
+    <script type="text/javascript" src="scripts/configManager.js"></script>
     <script type="text/javascript" src="scripts/plugin.js"></script>
 
     <link rel="stylesheet" href="resources/css/plugin_style.css">
@@ -25,10 +31,12 @@
             flex-direction: column;
             height: 100vh;
         }
+
         .tab-bar {
             display: flex;
             border-bottom: 1px solid #ccc;
         }
+
         .tab-button {
             flex: 1;
             padding: 10px;
@@ -38,9 +46,11 @@
             background-color: #f1f1f1;
             outline: none;
         }
+
         .tab-button.active {
             background-color: #ccc;
         }
+
         .tab-content {
             flex: 1;
             padding: 10px;
@@ -48,16 +58,18 @@
         }
     </style>
 </head>
+
 <body>
     <div class="tab-bar">
         <button class="tab-button active" data-tab="suggestions">Suggestions</button>
-        <button class="tab-button" data-tab="style">Style</button>
-        <button class="tab-button" data-tab="font">Font</button>
         <button class="tab-button" data-tab="dyslexia">Dyslexia</button>
+        <button class="tab-button" data-tab="linguistics">Linguistics</button>
+        <button id="font-tab-btn" class="tab-button" data-tab="font" style="display: none;">Font</button>
     </div>
 
     <div id="tab-content" class="tab-content">
         <!-- Content will be loaded here -->
     </div>
 </body>
+
 </html>

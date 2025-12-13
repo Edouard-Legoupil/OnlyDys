@@ -1,10 +1,10 @@
 // Ensure the global object is created
 window.OnlyDysLogic = window.OnlyDysLogic || {};
 
-(function(logic) {
+(function (logic) {
     let dictionary = [];
 
-    logic.loadDictionary = async function() {
+    logic.loadDictionary = async function () {
         try {
             const response = await fetch('data/dictionary_full.json');
             if (!response.ok) {
@@ -78,12 +78,12 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
         return null;
     }
 
-    logic.calculerScoreSemantique = function(suggestion, motPrecedent) {
+    logic.calculerScoreSemantique = function (suggestion, motPrecedent) {
         const poidsFrequence = 0.7;
         const poidsContexte = 0.3;
 
         let scoreFrequence = suggestion.frequence_norm || 0.0;
-        
+
         let scoreContexte = 0.0;
         const categorieAttendue = getCategorieAttendue(motPrecedent);
         if (categorieAttendue && suggestion.g === categorieAttendue) {
@@ -99,13 +99,13 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
         return maxLength > 0 ? 1 - (distance / maxLength) : 0;
     }
 
-    logic.classerSuggestions = function(motSaisi, motPrécédent) {
-        if (!motSaisi || typeof motSaisi !== 'string' || !dictionary.length) return [];
-        
+    function _classerSuggestions(motSaisi, motPrécédent, dict) {
+        if (!motSaisi || typeof motSaisi !== 'string' || !dict.length) return [];
+
         const phoneticCodeSaisi = getPhoneticCode(motSaisi);
 
         // Filter candidates for performance. Keep only those with a close phonetic match.
-        const candidatsPotentiels = dictionary.filter(entry => {
+        const candidatsPotentiels = dict.filter(entry => {
             return levenshteinDistance(phoneticCodeSaisi, entry.p) <= 1;
         });
 
@@ -113,7 +113,7 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
             const distancePhonetique = levenshteinDistance(phoneticCodeSaisi, candidat.p);
             // The phonetic code is always 4 characters long, so the max distance is 4.
             const scorePhonetique = 1 - (distancePhonetique / 4);
-            
+
             const scoreOrtho = calculerScoreOrthographique(motSaisi, candidat.w);
             const scoreSemantique = logic.calculerScoreSemantique(candidat, motPrécédent);
 
@@ -128,7 +128,13 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
         return candidatsScores
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
+    }
+
+    logic.classerSuggestions = function (motSaisi, motPrécédent) {
+        return _classerSuggestions(motSaisi, motPrécédent, logic.__getDictionary());
     };
+
+    logic._classerSuggestions = _classerSuggestions;
 
     function classifyConfusion(motSaisi, suggestion) {
         const phoneticSaisi = getPhoneticCode(motSaisi);
@@ -136,7 +142,7 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
 
         // Homophone confusion
         if (phoneticSaisi === phoneticSuggestion && motSaisi.toLowerCase() !== suggestion.w.toLowerCase()) {
-            return { type: 'Homophone', color: 'Purple', icon: '🔀' };
+            return { type: 'Homophone', color: '#CC79A7', icon: '🔀' }; // Reddish Purple
         }
 
         // Visual confusion (b/d, p/q, n/u check)
@@ -145,29 +151,29 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
             if (visualConfusions[motSaisi[i]] && suggestion.w.includes(visualConfusions[motSaisi[i]])) {
                 const regex = new RegExp(visualConfusions[motSaisi[i]], 'g');
                 if (motSaisi.replace(motSaisi[i], visualConfusions[motSaisi[i]]) === suggestion.w || (suggestion.w.match(regex) || []).length === 1) {
-                    return { type: 'Visual', color: 'Red', icon: '⚠️' };
+                    return { type: 'Visual', color: '#D55E00', icon: '⚠️' }; // Vermilion
                 }
             }
         }
 
         // Phonetic substitution (f/v, s/z check)
-        const phoneticSubstitutions = { 'f': 'v', 'v': 'f', 's': 'z', 'z': 's' };
+        const phoneticSubstitutions = { 'f': 'v', 'v': 'f', 's': 'z', 'z': 's', 'h': 'j', 'j': 'h' };
         for (let i = 0; i < motSaisi.length; i++) {
             if (phoneticSubstitutions[motSaisi[i]] && suggestion.w.includes(phoneticSubstitutions[motSaisi[i]])) {
-                 const regex = new RegExp(phoneticSubstitutions[motSaisi[i]], 'g');
+                const regex = new RegExp(phoneticSubstitutions[motSaisi[i]], 'g');
                 if (motSaisi.replace(motSaisi[i], phoneticSubstitutions[motSaisi[i]]) === suggestion.w || (suggestion.w.match(regex) || []).length === 1) {
-                    return { type: 'Phonetic', color: 'Orange', icon: '🔊' };
+                    return { type: 'Phonetic', color: '#E69F00', icon: '🔊' }; // Orange
                 }
             }
         }
-        
+
         // Morphological confusion (simple pluralization/conjugation check)
         if ((motSaisi.endsWith('s') && !suggestion.w.endsWith('s')) || (!motSaisi.endsWith('s') && suggestion.w.endsWith('s')) ||
             (motSaisi.endsWith('ent') && !suggestion.w.endsWith('ent')) || (!motSaisi.endsWith('ent') && suggestion.w.endsWith('ent'))) {
-            return { type: 'Morphological', color: 'Blue', icon: '📝' };
+            return { type: 'Morphological', color: '#0072B2', icon: '📝' }; // Blue
         }
-        
-        return { type: 'Unknown', color: 'Gray', icon: '❓' };
+
+        return { type: 'Unknown', color: '#999999', icon: '❓' }; // Gray
     }
 
     logic.classifyConfusion = classifyConfusion;
@@ -176,4 +182,7 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
     logic.getCategorieAttendue = getCategorieAttendue;
     logic.calculerScoreOrthographique = calculerScoreOrthographique;
 
+    // For testing purposes
+    logic.__getDictionary = () => dictionary;
+    logic.__setDictionary = (newDictionary) => { dictionary = newDictionary; };
 })(window.OnlyDysLogic);

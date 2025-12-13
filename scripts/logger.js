@@ -12,7 +12,7 @@
             ERROR: 3,
             OFF: 4
         },
-
+        
         // Set the default log level
         currentLevel: 1, // INFO
 

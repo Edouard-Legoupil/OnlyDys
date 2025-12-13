@@ -1,13 +1,28 @@
 <div style="margin: 12px 12px 4px 12px; width: calc(100% - 24px);">
-    <label id="paste-selection" class="unselectable" style="float: right; border-bottom: var(--scaled-one-pixel, 1px) dotted rgba(255, 255, 255, 0.8); cursor: pointer;">Paste Selection</label>
+    <div id="mode-switch" style="margin-bottom: 10px;">
+        <label>
+            <input type="radio" name="suggestion-mode" value="selection" checked> Selection
+        </label>
+        <label style="margin-left: 10px;">
+            <input type="radio" name="suggestion-mode" value="onthego"> On-the-go
+        </label>
+    </div>
+    <label id="paste-selection" class="unselectable"
+        style="float: right; border-bottom: var(--scaled-one-pixel, 1px) dotted rgba(255, 255, 255, 0.8); cursor: pointer;">Paste
+        Selection</label>
 </div>
-<div id="enter_container" class="form-control" style="cursor: text; position: relative; margin: 0px 12px 0px 12px; min-height: 100px; max-height: 45%; height: fit-content;">
-    <div id="textarea" contenteditable="true" style="min-width: 95%; max-width: 95%; height: fit-content; padding: 0px 15px 5px 3px; outline: none; white-space: normal; float: left; word-wrap: break-word;" ></div>
+<div id="enter_container" class="form-control"
+    style="cursor: text; position: relative; margin: 0px 12px 0px 12px; min-height: 100px; max-height: 45%; height: fit-content;">
+    <div id="textarea" contenteditable="true"
+        style="min-width: 95%; max-width: 95%; height: fit-content; padding: 0px 15px 5px 3px; outline: none; white-space: normal; float: left; word-wrap: break-word;">
+    </div>
 </div>
 <div id="button_wrapper">
-    <div id="check-text-button" class="noselect btn-text-default i18n" style="height: auto; min-height: 20px;">Check</div>
+    <div id="check-text-button" class="noselect btn-text-default i18n" style="height: auto; min-height: 20px;">Check
+    </div>
 </div>
-<div id="suggestions-container" style="position: relative; width: 100%; height: 100%; margin: 12px 0 12px 0; overflow: hidden ">
+<div id="suggestions-container"
+    style="position: relative; width: 100%; height: 100%; margin: 12px 0 12px 0; overflow: hidden ">
     <!-- Les suggestions seront ajoutées ici dynamiquement -->
 </div>
 

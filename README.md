@@ -8,13 +8,12 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
 
 ## Features
 
-- **Real-time Word Suggestions**: As you type, OnlyDys analyzes the current word and provides a list of suggestions in a side panel. The suggestion algorithm is tailored for common dyslexic errors and considers:
-    - **Phonetic Similarity**: Suggests words that sound similar (e.g., "au" vs. "eau").
-    - **Orthographic Similarity**: Corrects common spelling mistakes based on Levenshtein distance.
-    - **Contextual Analysis**: Prioritizes suggestions based on the preceding word's grammatical category (e.g., suggesting a noun after a determiner).
+- **Two Suggestion Modes**:
+    - **Selection Mode (Manual)**: Select text and click "Paste Selection" to get suggestions, or simply type in the box.
+    - **On-the-go Mode (Automatic)**: The plugin automatically detects the word under your cursor or selection and updates suggestions in real-time as you navigate.
 
 - **Suggestion Classification**: Each suggestion is categorized and color-coded to help the user understand the nature of the potential error:
-    - ırmızı **Visual Confusion**: Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).
+    - 🔴 **Visual Confusion**: Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).
     - 🟧 **Phonetic Confusion**: Indicates words that are spelled differently but sound similar.
     - 🟪 **Homophones**: Flags words that sound the same but have different meanings and spellings.
     - 🟦 **Morphological Errors**: Catches common mistakes in word endings, like pluralization or conjugation.
@@ -24,23 +23,33 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
     - **Text-to-Speech**: Click the speaker icon (🔊) to hear the suggested word read aloud.
     - **Illustrations**: Displays an image for the word when available, providing a visual aid for comprehension.
 
-- **Dyslexia-Friendly Document Styling**: With a single click, you can apply a set of dyslexia-friendly styles to the entire document:
-    - **OpenDyslexic Font**: The entire document's font is changed to [OpenDyslexic](https://opendyslexic.org/), a typeface designed to increase readability for people with dyslexia.
-    - **Enhanced Spacing**: Increased line and letter spacing is applied to reduce visual stress and improve readability.
+- **Advanced Linguistic Formatting & Styling**: A dedicated "Linguistics" tab provides deep linguistic analysis and styling for French text:
+    - **Global Formatting**: With a single click, apply **OpenDyslexic Font** and enhanced spacing to the entire document (without changing colors).
+    - **Grammatical Coloring**: Select "Grammatical Categories" mode to color-code words (Noun, Verb, etc.) based on their function.
+    - **Phoneme Colorization**: Highlights distinct phonemes (sounds) with different colors.
+    - **Syllable Segmentation**:
+        - **Alternating Colors**: colors syllables in alternating shades.
+        - **Syllable Arcs**: Draws vector arcs underneath syllables.
+    - **Silent Letter Detection**: Automatically detects and greys out silent letters.
 
-- **Grammatical Color-Coding**: This feature applies a distinct color to words based on their grammatical category (noun, verb, adjective, etc.), helping users to better understand sentence structure. A legend is displayed in the plugin panel.
+- **Smart Font Detection**: The plugin automatically checks if the **OpenDyslexic** font is installed on your system. If missing, a "Font" tab will appear with installation instructions.
 
 ## How to Use
 
 1.  **Open the Plugin**: Click the "Plugins" tab in the ONLYOFFICE editor and select the "OnlyDys" plugin.
-2.  **Real-time Suggestions**:
-    - As you type, a side panel will automatically appear with suggestions for the word at your cursor.
-    - To replace a word in your document, click on the desired suggestion card.
-    - To hear a word, click the 🔊 icon on its card.
-3.  **Apply Document Styles**:
-    - Click the **"Appliquer le style au document"** button at the top of the plugin panel.
-    - This will apply the OpenDyslexic font and adjust spacing throughout the document.
-    - It will also color-code the words according to their grammatical function.
+2.  **Get Suggestions**:
+    - **Default**: Use the toggle to switch between "Selection" (Manual) or "On-the-go" (Auto) modes.
+    - **On-the-go**: Simply move your cursor or select text; suggestions appear automatically.
+    - **Manual**: Select text, click "Paste Selection", then "Check".
+    - To replace a word, click the desired suggestion card.
+3.  **Linguistics & Styling**:
+    - Switch to the **"Linguistics"** tab.
+    - **Apply Font & Spacing**: Click the button at the bottom to apply OpenDyslexic font and spacing globally (no colors).
+    - **Apply Analysis/Coloring**:
+        - Select a **Mode** (Grammatical Categories, Phonemes, Syllables, etc.).
+        - Click **Apply to Selection** to color-code the selected text.
+4.  **Dyslexia Simulation**:
+    - Switch to the **"Dyslexia"** tab to simulate how a dyslexic person might perceive the text.
 
 ## Installation
 

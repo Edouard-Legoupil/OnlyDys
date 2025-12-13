@@ -1,18 +1,18 @@
-window.OnlyDysStyles = (function() {
+window.OnlyDysStyles = (function () {
     const GRAMMAR_COLOR_MAP = {
-        'NOM': '#E63946', // Red
-        'VER': '#457B9D', // Blue
-        'ADJ': '#A8DADC', // Cyan
-        'ADV': '#98FB98', // PaleGreen
-        'PRO': '#1D3557', // Dark Blue
-        'DET': '#F4A261', // Orange
-        'PRE': '#E76F51', // Dark Orange
-        'CON': '#2A9D8F', // Teal
-        'INT': '#E9C46A', // Yellow
+        'NOM': '#D55E00', // Vermilion
+        'VER': '#0072B2', // Blue
+        'ADJ': '#56B4E9', // Sky Blue
+        'ADV': '#009E73', // Bluish Green
+        'PRO': '#E69F00', // Orange
+        'DET': '#CC79A7', // Reddish Purple
+        'PRE': '#000000', // Black
+        'CON': '#999999', // Grey
+        'INT': '#F0E442', // Yellow
     };
 
     function applyStyleToDocument() {
-        window.Asc.plugin.callCommand(function() {
+        window.Asc.plugin.callCommand(function () {
             var oDocument = Api.GetDocument();
 
             // Check if font exists
@@ -74,34 +74,45 @@ window.OnlyDysStyles = (function() {
         }, false, true);
     }
 
-    function colorCodeDocument() {
-        window.Asc.plugin.callCommand(function() {
-            var oDocument = Api.GetDocument();
-            var dictionary = window.OnlyDysLogic.dictionary || [];
-            var wordMap = new Map(dictionary.map(entry => [entry.w.toLowerCase(), entry.g]));
+    // colorCodeDocument moved to ColorizationEngine under mode 'grammar'
 
+    function revertStyleInDocument() {
+        window.Asc.plugin.callCommand(function () {
+            var oDocument = Api.GetDocument();
             var nParas = oDocument.GetElementsCount();
+
+            // Default style properties to revert to (Simplified)
+            // Ideally we would revert to the style definition, but setting hard values works for "undoing" our hard overrides.
+
+            var bodyParaPr = Api.CreateParaPr();
+            bodyParaPr.SetSpacingLine(240, "auto"); // Default single spacing roughly
+            bodyParaPr.SetJc("left");
+
+            var bodyCharPr = Api.CreateCharPr();
+            bodyCharPr.SetFontFamily("Arial"); // Revert to a standard safe font
+            bodyCharPr.SetFontSize(22); // 11pt default
+            bodyCharPr.SetBold(false);
+            bodyCharPr.SetSpacing(0); // Reset letter spacing
+
             for (var i = 0; i < nParas; i++) {
                 var oPara = oDocument.GetElement(i);
-                var sParaText = oPara.GetText();
-                // Regex to split text into words and punctuation
-                var words = sParaText.match(/[\w']+|[.,!?;:"()\s]/g) || [];
-                var currentPos = 0;
+                var paraPr = oPara.GetParaPr();
 
-                words.forEach(function(word) {
-                    var lowerWord = word.toLowerCase();
-                    var grammar = wordMap.get(lowerWord);
-                    if (grammar && GRAMMAR_COLOR_MAP[grammar]) {
-                        var color = GRAMMAR_COLOR_MAP[grammar];
-                        var r = parseInt(color.slice(1, 3), 16);
-                        var g = parseInt(color.slice(3, 5), 16);
-                        var b = parseInt(color.slice(5, 7), 16);
+                // We only revert if it looks like we touched it? 
+                // Or we just force reset for consistency if the user asks to "Disable".
+                // Let's force reset to "Normal" style approximations.
 
-                        var oRange = oPara.GetRange(currentPos, currentPos + word.length - 1);
-                        oRange.SetColor(r, g, b);
-                    }
-                    currentPos += word.length;
-                });
+                // We could check if Font is OpenDyslexic, but simplistic revert is safer for "OFF" switch.
+
+                // Resetting to the paragraph's style default would be better but API might require explicit Set.
+                // We will apply the "Standard" look we defined above.
+
+                // Note: This overrides headings too if we aren't careful.
+                // Let's just try to reset the specific properties we changed.
+
+                oPara.SetParaPr(bodyParaPr);
+                var oRange = oPara.GetRange(0, -1);
+                oRange.SetCharPr(bodyCharPr);
             }
         }, false, true);
     }
@@ -129,7 +140,7 @@ window.OnlyDysStyles = (function() {
 
     return {
         applyStyleToDocument,
-        colorCodeDocument,
+        revertStyleInDocument,
         displayColorLegend,
     };
 })();

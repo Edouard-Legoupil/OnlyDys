@@ -1,4 +1,4 @@
-window.OnlyDysDyslexia = (function() {
+window.OnlyDysDyslexia = (function () {
     'use strict';
 
     /**
@@ -45,13 +45,13 @@ window.OnlyDysDyslexia = (function() {
 
         // To avoid getting the same word, we can add a simple retry, but for now, this is fine.
         if (scrambledWord === word && word.length > 3) {
-             // simple shuffle for the middle part
-             let middleChars = word.substring(1, word.length - 1).split('');
-             for (let i = middleChars.length - 1; i > 0; i--) {
-                 const j = Math.floor(Math.random() * (i + 1));
-                 [middleChars[i], middleChars[j]] = [middleChars[j], middleChars[i]];
-             }
-             return word[0] + middleChars.join('') + word[word.length - 1];
+            // simple shuffle for the middle part
+            let middleChars = word.substring(1, word.length - 1).split('');
+            for (let i = middleChars.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [middleChars[i], middleChars[j]] = [middleChars[j], middleChars[i]];
+            }
+            return word[0] + middleChars.join('') + word[word.length - 1];
         }
 
         return scrambledWord;
@@ -69,16 +69,29 @@ window.OnlyDysDyslexia = (function() {
         let lastIndex = 0;
 
         // Use String.prototype.replace with a function to handle matches and non-matches
-        messedUpText = str.replace(/\w+/g, function(word) {
+        messedUpText = str.replace(/\w+/g, function (word) {
             return scrambleWord(word, options);
         });
 
         return messedUpText;
     }
 
+    // State for Revert
+    let lastOriginalText = null;
+
+    function storeOriginal(text) {
+        lastOriginalText = text;
+    }
+
+    function getOriginal() {
+        return lastOriginalText;
+    }
+
     // Expose the main function
     return {
-        processText: dyslexia
+        processText: dyslexia,
+        storeOriginal: storeOriginal,
+        getOriginal: getOriginal
     };
 
 })();

@@ -17,11 +17,11 @@
             card.className = 'suggestion-card';
             card.style.borderLeft = `5px solid ${confusion.color}`;
             card.onclick = () => window.replaceCurrentWord(suggestion.w); // Uses the global function
-
+            
             const confusionIcon = document.createElement('span');
             confusionIcon.className = 'confusion-icon';
             confusionIcon.textContent = confusion.icon;
-
+            
             const wordSpan = document.createElement('span');
             wordSpan.className = 'word';
             wordSpan.textContent = suggestion.w;
