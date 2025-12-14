@@ -75,6 +75,209 @@
         }
     }
 
+    const LINGUISTIC_ENGINE_SOURCE = `(function (window) {
+    'use strict';
+
+    const VOWELS = [
+        "a", "à", "â",
+        "e", "é", "è", "ê", "ë",
+        "i", "î", "ï",
+        "o", "ô",
+        "u", "ù", "û", "ü",
+        "y",
+        "œ", "æ"
+    ];
+
+    const VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
+
+    const MULTI_PHONEMES = [
+        "eau", "eaux",
+        "ain", "aim", "ein", "eim",
+        "ien",
+        "oin",
+        "on", "om",
+        "an", "am",
+        "en", "em",
+        "in", "im", "yn", "ym",
+        "ou", "oi", "ai", "ei", "au",
+        "ch", "ph", "th", "gn", "qu", "gu",
+        "ill"
+    ];
+
+    const SILENT_ENDINGS = [
+        "ent", "es", "e", "s", "t", "d", "p", "x"
+    ];
+
+    const LinguisticEngine = {
+        normalizeFrench: function (text) { if (!text) return ""; return text.toLowerCase().normalize("NFC"); },
+        isVowel: function (char) { return VOWELS.includes(char.toLowerCase()); },
+        isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâçéèêëîïôùûüœæ]/i.test(char); },
+        isPunctuation: function (char) { return /\\p{P}/u.test(char); },
+        tokenizeWords: function (text) { return text.match(/\\p{L}+['’-]?\\p{L}*/gu) || []; },
+        segmentPhonemes: function (word) {
+            const normalizedWord = this.normalizeFrench(word);
+            const phonemes = [];
+            let i = 0;
+            while (i < normalizedWord.length) {
+                let matched = false;
+                for (const p of MULTI_PHONEMES) {
+                    if (normalizedWord.startsWith(p, i)) {
+                        const isNasalCandidate = (p.endsWith("n") || p.endsWith("m")) && p.length <= 4 && !["gn"].includes(p);
+                        if (isNasalCandidate) {
+                            const nextChar = normalizedWord[i + p.length];
+                            if (nextChar) {
+                                if (this.isVowel(nextChar)) continue;
+                                if (nextChar === 'n' || nextChar === 'm') continue;
+                            }
+                        }
+                        phonemes.push(p); i += p.length; matched = true; break;
+                    }
+                }
+                if (!matched) { phonemes.push(normalizedWord[i]); i++; }
+            }
+            return phonemes;
+        },
+        segmentSyllables: function (word) {
+            const phonemes = this.segmentPhonemes(word);
+            const syllables = [];
+            let current = [];
+            for (let i = 0; i < phonemes.length; i++) {
+                current.push(phonemes[i]);
+                if (VOWEL_REGEX.test(phonemes[i])) {
+                    const next = phonemes[i + 1];
+                    const nextNext = phonemes[i + 2];
+                    if (next && !VOWEL_REGEX.test(next)) {
+                        if (nextNext && !VOWEL_REGEX.test(nextNext)) { current.push(next); i++; syllables.push(current); current = []; }
+                        else { syllables.push(current); current = []; }
+                    } else { syllables.push(current); current = []; }
+                }
+            }
+            if (current.length) {
+                if (syllables.length > 0) {
+                    const currentHasVowel = current.some(p => VOWEL_REGEX.test(p));
+                    if (!currentHasVowel) syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
+                    else syllables.push(current);
+                } else syllables.push(current);
+            }
+            return syllables.map(s => s.join(""));
+        },
+        detectSilentLetters: function (word) {
+            if (!word) return [];
+            const silentIndexes = [];
+            const lower = word.toLowerCase();
+            for (const end of SILENT_ENDINGS) {
+                if (lower.endsWith(end) && lower.length > end.length) {
+                    const startIndex = lower.length - end.length;
+                    for (let i = startIndex; i < lower.length; i++) {
+                        if (silentIndexes.indexOf(i) === -1) silentIndexes.push(i);
+                    }
+                    break;
+                }
+            }
+            return silentIndexes.sort(function (a, b) { return a - b; });
+        },
+        analyzeWord: function (word) {
+            return { original: word, phonemes: this.segmentPhonemes(word), syllables: this.segmentSyllables(word), silentLetters: this.detectSilentLetters(word) };
+        }
+    };
+    window.LinguisticEngine = LinguisticEngine;
+})(window);`;
+
+    const COLORIZATION_ENGINE_SOURCE = `(function (window) {
+    'use strict';
+    const ColorizationEngine = {
+        palettes: {
+            phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
+            syllables: ["#D55E00", "#0072B2"],
+            words: ["#000000", "#555555"],
+            lines: ["#000000", "#0072B2"],
+            vowels: "#D55E00", consonants: "#0072B2", silent: "#999999", punctuation: "#CC79A7",
+            grammar: { 'NOM': '#D55E00', 'VER': '#0072B2', 'ADJ': '#56B4E9', 'ADV': '#009E73', 'PRO': '#E69F00', 'DET': '#CC79A7', 'PRE': '#000000', 'CON': '#999999', 'INT': '#F0E442' }
+        },
+        processModel: function (model, config) {
+            const processedModel = JSON.parse(JSON.stringify(model));
+            let wordMap = null;
+            if (config.mode === 'grammar' && window.OnlyDysLogic && window.OnlyDysLogic.dictionary) {
+                wordMap = new Map(window.OnlyDysLogic.dictionary.map(entry => [entry.w.toLowerCase(), entry.g]));
+            }
+            processedModel.paragraphs.forEach(para => {
+                const newRuns = [];
+                para.textRuns.forEach(run => {
+                    if (!run.text) return;
+                    const transformedRuns = this.processRun(run, config, wordMap);
+                    newRuns.push(...transformedRuns);
+                });
+                para.textRuns = newRuns;
+            });
+            return processedModel;
+        },
+        processRun: function (run, config, wordMap) {
+            const originalText = run.text;
+            const engine = window.LinguisticEngine;
+            const newRuns = [];
+            const addSegment = (text, color, extraFormatting = {}) => {
+                newRuns.push({ text: text, formatting: { ...run.formatting, color: color || run.formatting.color, ...extraFormatting } });
+            };
+            if (config.mode === 'grammar') {
+                const words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                    const lowerWord = token.toLowerCase();
+                    const grammar = wordMap ? wordMap.get(lowerWord) : null;
+                    let color = null;
+                    if (grammar && this.palettes.grammar[grammar]) color = this.palettes.grammar[grammar];
+                    addSegment(token, color);
+                });
+            } else if (config.mode === 'phonemes') {
+                const words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                    const analysis = engine.analyzeWord(token);
+                    analysis.phonemes.forEach((p, idx) => {
+                        const colorIndex = Math.abs(this.hashCode(p.toLowerCase())) % this.palettes.phonemes.length;
+                        const color = this.palettes.phonemes[colorIndex];
+                        addSegment(p, color);
+                    });
+                });
+            } else if (config.mode === 'syllables') {
+                const words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                    const syllables = engine.segmentSyllables(token);
+                    syllables.forEach((s, idx) => {
+                        const color = this.palettes.syllables[idx % 2];
+                        addSegment(s, color);
+                    });
+                });
+            } else if (config.mode === 'silent') {
+                const words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                    const silentIndices = engine.detectSilentLetters(token);
+                    if (silentIndices.length === 0) { addSegment(token, null); }
+                    else {
+                        let lastIdx = 0;
+                        for (let i = 0; i < token.length; i++) {
+                            if (silentIndices.includes(i)) {
+                                if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
+                                addSegment(token[i], this.palettes.silent);
+                                lastIdx = i + 1;
+                             }
+                        }
+                        if (lastIdx < token.length) addSegment(token.substring(lastIdx), null);
+                    }
+                });
+            } else { addSegment(originalText, null); }
+            return newRuns;
+        },
+        hashCode: function (str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+            return hash;
+        }
+    };
+    window.ColorizationEngine = ColorizationEngine;
+})(window);`;
 
     function initLinguisticsTab() {
         const styleToggle = document.getElementById('toggle-global-style');
@@ -148,6 +351,16 @@
             }]
         };
 
+        if (!window.LinguisticEngine || !window.ColorizationEngine) {
+            // Basic eval for UI context
+            try {
+                eval(LINGUISTIC_ENGINE_SOURCE);
+                eval(COLORIZATION_ENGINE_SOURCE);
+            } catch (e) {
+                console.error("Failed to init engines for preview", e);
+                return;
+            }
+        }
 
         if (window.ColorizationEngine) {
             const result = window.ColorizationEngine.processModel(mockModel, config);
@@ -184,10 +397,15 @@
 
         const config = { mode: mode, options: options };
 
+        Asc.scope.linguisticScript = LINGUISTIC_ENGINE_SOURCE;
+        Asc.scope.colorizationScript = COLORIZATION_ENGINE_SOURCE;
         Asc.scope.config = config;
 
         window.Asc.plugin.callCommand(function () {
             try {
+                eval(Asc.scope.linguisticScript);
+                eval(Asc.scope.colorizationScript);
+
                 var oDocument = Api.GetDocument();
 
                 // RECURSIVE HELPER (Robust)
@@ -336,7 +554,7 @@
             container.innerHTML = ''; // Clear previous results
 
             if (text && text.trim().length > 0) {
-                const words = text.trim().split(/\s+/);
+                const words = text.trim().split(/\\s+/);
                 let motPrecedent = null;
 
                 words.forEach((motSaisi, index) => {
@@ -368,11 +586,6 @@
             // Poll every 1 second
             pollingInterval = setInterval(() => {
                 window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                    // In a real "current word" scenario we might want a different method, 
-                    // but GetSelectedText is often used if the user selects nothing it might return current word or empty.
-                    // If return is empty, we might not want to clear everything immediately if we want to be persistent,
-                    // but for "on the go" usually implies acting on selection or cursor context. 
-                    // For now we rely on GetSelectedText.
                     if (text !== lastCheckedText) {
                         document.getElementById('textarea').innerText = text;
                         processSuggestions(text);
@@ -401,7 +614,6 @@
                 if (checkTextButton) checkTextButton.style.display = 'block';
                 stopPolling();
 
-                // FIX: Automatically fetch selection when entering Selection mode
                 window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
                     if (text) {
                         document.getElementById('textarea').innerText = text;
@@ -411,12 +623,10 @@
             }
         }
 
-        // Event Listeners for Mode Switch
         modeRadios.forEach(radio => {
             radio.addEventListener('change', updateMode);
         });
 
-        // Initialize default state
         updateMode();
 
 
@@ -439,11 +649,9 @@
     }
 
     function initFontTab() {
-        // Logic for the font tab will be added in the next step
         const checkFontButton = document.getElementById('check-font-button');
         if (checkFontButton) {
             checkFontButton.addEventListener('click', function () {
-                // Re-run the font check
                 checkFont();
             });
         }
@@ -457,16 +665,15 @@
 
         const dyslexiaToggle = document.getElementById('toggle-dyslexia-sim');
         const dyslexiaStatus = document.getElementById('dyslexia-sim-status');
+        let originalDocumentModel = null;
 
         if (dyslexiaToggle) {
             dyslexiaToggle.addEventListener('change', function (e) {
                 if (e.target.checked) {
-                    // Activate Simulation - Full Document In-Place
                     window.Asc.plugin.callCommand(function () {
                         try {
                             var oDocument = Api.GetDocument();
 
-                            // Recursive Helper
                             function collectAllParagraphs(container) {
                                 var paragraphs = [];
                                 if (!container) return [];
@@ -489,7 +696,6 @@
                                             var cellCount = row.GetCellsCount();
                                             for (var c = 0; c < cellCount; c++) {
                                                 var cell = row.GetCell(c);
-                                                // Recurse Cell as container
                                                 paragraphs = paragraphs.concat(collectAllParagraphs(cell));
                                             }
                                         }
@@ -507,8 +713,8 @@
                             }
 
                             var allParagraphs = collectAllParagraphs(oDocument);
+                            originalDocumentModel = [];
 
-                            // Inner function for scrambling
                             function scrambleText(text) {
                                 var words = text.split(" ");
                                 for (var i = 0; i < words.length; i++) {
@@ -521,33 +727,37 @@
                                 return words.join(" ");
                             }
 
-                            // Apply scrambling using a robust model-based approach
                             for (var i = 0; i < allParagraphs.length; i++) {
                                 var oParagraph = allParagraphs[i];
                                 var runsCount = oParagraph.GetElementsCount();
                                 var paraModel = { textRuns: [] };
+                                var originalParaModel = { textRuns: [] };
 
-                                // 1. Build a model of the paragraph and scramble text
                                 for (var j = 0; j < runsCount; j++) {
                                     var oRun = oParagraph.GetElement(j);
                                     if (oRun.GetClassType() === "run") {
                                         var originalText = oRun.GetText();
+                                        var runFormatting = {
+                                            bold: oRun.GetBold(),
+                                            italic: oRun.GetItalic(),
+                                            underline: oRun.GetUnderline(),
+                                            strikeout: oRun.GetStrikeout(),
+                                            fontFamily: oRun.GetFontFamily(),
+                                            fontSize: oRun.GetFontSize(),
+                                            color: oRun.GetColor()
+                                        };
                                         paraModel.textRuns.push({
                                             text: scrambleText(originalText),
-                                            formatting: {
-                                                bold: oRun.GetBold(),
-                                                italic: oRun.GetItalic(),
-                                                underline: oRun.GetUnderline(),
-                                                strikeout: oRun.GetStrikeout(),
-                                                fontFamily: oRun.GetFontFamily(),
-                                                fontSize: oRun.GetFontSize(),
-                                                color: oRun.GetColor() // Returns [r,g,b]
-                                            }
+                                            formatting: runFormatting
+                                        });
+                                        originalParaModel.textRuns.push({
+                                            text: originalText,
+                                            formatting: runFormatting
                                         });
                                     }
                                 }
+                                originalDocumentModel.push(originalParaModel);
 
-                                // 2. Rebuild the paragraph from the model
                                 oParagraph.RemoveAllElements();
                                 for (var k = 0; k < paraModel.textRuns.length; k++) {
                                     var runData = paraModel.textRuns[k];
@@ -557,7 +767,6 @@
                                     if (runData.formatting) {
                                         var f = runData.formatting;
                                         if (f.color) {
-                                            // GetColor returns an array [r, g, b], SetColor takes r, g, b
                                             oNewRun.SetColor(f.color[0], f.color[1], f.color[2]);
                                         }
                                         if (f.bold) oNewRun.SetBold(true);
@@ -585,10 +794,38 @@
                         }
                     });
                 } else {
-                    // Deactivate / Revert - Using Undo() which is safer for in-place edits than replacing all text
-                    // Assuming the user hasn't done massive edits in between.
                     window.Asc.plugin.callCommand(function () {
-                        Api.asc_Undo();
+                        try {
+                            var oDocument = Api.GetDocument();
+                            var allParagraphs = collectAllParagraphs(oDocument);
+
+                            for (var i = 0; i < allParagraphs.length; i++) {
+                                var oParagraph = allParagraphs[i];
+                                oParagraph.RemoveAllElements();
+                                var paraModel = originalDocumentModel[i];
+                                for (var k = 0; k < paraModel.textRuns.length; k++) {
+                                    var runData = paraModel.textRuns[k];
+                                    var oNewRun = Api.CreateRun();
+                                    oNewRun.AddText(runData.text);
+
+                                    if (runData.formatting) {
+                                        var f = runData.formatting;
+                                        if (f.color) {
+                                            oNewRun.SetColor(f.color[0], f.color[1], f.color[2]);
+                                        }
+                                        if (f.bold) oNewRun.SetBold(true);
+                                        if (f.italic) oNewRun.SetItalic(true);
+                                        if (f.underline) oNewRun.SetUnderline(f.underline);
+                                        if (f.strikeout) oNewRun.SetStrikeout(true);
+                                        if (f.fontFamily) oNewRun.SetFontFamily(f.fontFamily);
+                                        if (f.fontSize) oNewRun.SetFontSize(f.fontSize);
+                                    }
+                                    oParagraph.AddElement(oNewRun);
+                                }
+                            }
+                        } catch (err) {
+                            return "ERROR: " + err.toString();
+                        }
                     }, false, true, function () {
                         if (dyslexiaStatus) {
                             dyslexiaStatus.textContent = "Inactive";
@@ -605,7 +842,6 @@
             var oDocument = Api.GetDocument();
             var oPara = Api.CreateParagraph();
             oPara.AddText("font check");
-            // Safer check: Push to end, check, remove from end.
             oDocument.Push(oPara);
 
             try {
@@ -617,7 +853,6 @@
             } catch (e) {
                 return false;
             } finally {
-                // Always clean up
                 try {
                     var count = oDocument.GetElementsCount();
                     oDocument.RemoveElement(count - 1);
@@ -641,10 +876,8 @@
     }
 
 
-    // The main entry point for the plugin
     window.Asc.plugin.init = function () {
         window.OnlyDysLogic.loadDictionary().then(() => {
-            // Dictionary loaded, you can now enable UI elements that depend on it.
             logger.info('Dictionary loaded, initializing tabs.');
         });
 
@@ -655,11 +888,9 @@
             });
         });
 
-        // Load the suggestions tab by default
         loadTab('suggestions');
     };
 
-    // Handle plugin button click to close the plugin
     window.Asc.plugin.button = function (id) {
         this.executeCommand("close", "");
     };
