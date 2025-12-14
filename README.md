@@ -54,17 +54,11 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
 ## Installation
 
 To install the OnlyDys plugin:
-
-1.  **Build the Plugin**:
-    - Run the build script: `python3 package_plugin.py`
-    - This will create a `deploy` folder containing `OnlyDys.plugin`.
-
-2.  **Add the Plugin**: 
     - In `OnlyOffice Desktop Editors`, open the **Plugins** tab.
     - Click **Settings** -> **Add Plugin**.
-    - Select the `deploy/OnlyDys.plugin` file.
+    - Select the `[OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin)` file.
     
-3.  **Use in ONLYOFFICE**: The OnlyDys plugin will be available in the "Plugins" tab.
+The OnlyDys plugin will be available in the "Plugins" tab.
 
 ## Debugging
 
@@ -87,7 +81,7 @@ The plugin includes a suite of unit tests to ensure that the core logic is worki
 
 ## Dev
 
-The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Though, this tool might support other kids with same challenges as well. 
+The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Though, this tool might support  as well other kids with similar challenges. 
 
 I have reviewed a set of existing tools (nonne being open source and working on Linux...) to build this plugin:
 
@@ -96,5 +90,9 @@ I have reviewed a set of existing tools (nonne being open source and working on 
  - [Studys](https://studys.fusofrance.org/)
  - [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
  - [Lexibar](https://www.lexibar.ca/ca/en/)
+
+This tool was mostly coded using vibe coding in [Antigravity](https://antigravity.google/). You can clone the repository to contribute. **To build the plugin**:
+ - Run the build script: `python3 package_plugin.py`
+ - This will create the `OnlyDys.plugin` file in the `deploy` folder.
 
 If you spot any issue or have any ideas of additional features or capabilities, please [create an issue here](https://github.com/Edouard-Legoupil/OnlyDys/issues/new).
