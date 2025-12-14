@@ -53,10 +53,13 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
 
 ## Installation
 
-To install the OnlyDys plugin:
-    - In `OnlyOffice Desktop Editors`, open the **Plugins** tab.
-    - Click **Settings** -> **Add Plugin**.
-    - Select the `[OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin)` file.
+To install the OnlyDys plugin: 
+
+ - In `OnlyOffice Desktop Editors`, open the **Plugins** tab.
+
+ - Click **Settings** -> **Add Plugin**.
+
+ - Select the `[OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin)` file.
     
 The OnlyDys plugin will be available in the "Plugins" tab.
 
