@@ -1,33 +1,11 @@
 window.OnlyDysStyles = (function () {
-    const GRAMMAR_COLOR_MAP = {
-        'NOM': '#D55E00', // Vermilion
-        'VER': '#0072B2', // Blue
-        'ADJ': '#56B4E9', // Sky Blue
-        'ADV': '#009E73', // Bluish Green
-        'PRO': '#E69F00', // Orange
-        'DET': '#CC79A7', // Reddish Purple
-        'PRE': '#000000', // Black
-        'CON': '#999999', // Grey
-        'INT': '#F0E442', // Yellow
-    };
 
     function applyStyleToDocument() {
         window.Asc.plugin.callCommand(function () {
             var oDocument = Api.GetDocument();
 
-            // Check if font exists
-            var oPara = Api.CreateParagraph();
-            oPara.AddText("font check");
-            oDocument.InsertContent([oPara], true);
-            var oRange = oPara.GetRange(0, -1);
-            oRange.SetHidden(true);
-            oRange.SetFontFamily("OpenDyslexic");
-            var sFontFamily = oRange.GetFontFamily();
-            oPara.Delete();
-
-            if (sFontFamily !== "OpenDyslexic") {
-                alert("The OpenDyslexic font is not installed on your system. The styles will be applied, but the font will not be changed.");
-            }
+            // Font check removed to prevent document modification artifacts.
+            // (Font availability is checked in the Font tab or assumed)
 
             var nParas = oDocument.GetElementsCount();
 
@@ -117,30 +95,10 @@ window.OnlyDysStyles = (function () {
         }, false, true);
     }
 
-    function displayColorLegend() {
-        const legendContainer = document.getElementById('color-legend');
-        if (!legendContainer) return;
-        legendContainer.innerHTML = '';
-        for (const [grammar, color] of Object.entries(GRAMMAR_COLOR_MAP)) {
-            const item = document.createElement('div');
-            item.className = 'legend-item';
 
-            const colorBox = document.createElement('div');
-            colorBox.className = 'legend-color';
-            colorBox.style.backgroundColor = color;
-
-            const label = document.createElement('span');
-            label.textContent = grammar;
-
-            item.appendChild(colorBox);
-            item.appendChild(label);
-            legendContainer.appendChild(item);
-        }
-    }
 
     return {
         applyStyleToDocument,
-        revertStyleInDocument,
-        displayColorLegend,
+        revertStyleInDocument
     };
 })();

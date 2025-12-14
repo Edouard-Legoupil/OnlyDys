@@ -17,6 +17,39 @@
      * }
      */
 
+    const GRAMMAR_COLOR_MAP = {
+        'NOM': '#D55E00', // Vermilion
+        'VER': '#0072B2', // Blue
+        'ADJ': '#56B4E9', // Sky Blue
+        'ADV': '#009E73', // Bluish Green
+        'PRO': '#E69F00', // Orange
+        'DET': '#CC79A7', // Reddish Purple
+        'PRE': '#000000', // Black
+        'CON': '#999999', // Grey
+        'INT': '#F0E442', // Yellow
+    };
+
+    function displayColorLegend() {
+        const legendContainer = document.getElementById('color-legend');
+        if (!legendContainer) return;
+        legendContainer.innerHTML = '';
+        for (const [grammar, color] of Object.entries(GRAMMAR_COLOR_MAP)) {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+
+            const colorBox = document.createElement('div');
+            colorBox.className = 'legend-color';
+            colorBox.style.backgroundColor = color;
+
+            const label = document.createElement('span');
+            label.textContent = grammar;
+
+            item.appendChild(colorBox);
+            item.appendChild(label);
+            legendContainer.appendChild(item);
+        }
+    }
+
     const ColorizationEngine = {
         /**
          * DEFAULT PALETTES
