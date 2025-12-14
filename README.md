@@ -13,14 +13,14 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
     - **On-the-go Mode (Automatic)**: The plugin automatically detects the word under your cursor or selection and updates suggestions in real-time as you navigate.
 
 - **Suggestion Classification**: Each suggestion is categorized and color-coded to help the user understand the nature of the potential error:
-    - 🔴 **Visual Confusion**: Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).
-    - 🟧 **Phonetic Confusion**: Indicates words that are spelled differently but sound similar.
-    - 🟪 **Homophones**: Flags words that sound the same but have different meanings and spellings.
-    - 🟦 **Morphological Errors**: Catches common mistakes in word endings, like pluralization or conjugation.
+    - ⚠️🔴 **Visual Confusion**: Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).
+    - 🔊🟧 **Phonetic Confusion**: Indicates words that are spelled differently but sound similar.
+    - 🔀🟪 **Homophones**: Flags words that sound the same but have different meanings and spellings.
+    - 📝🟦 **Morphological Errors**: Catches common mistakes in word endings, like pluralization or conjugation.
 
 - **Interactive Suggestion Cards**: Each suggestion is displayed on an interactive card:
     - **Click to Replace**: Simply click the card to replace the word in the document with the suggestion.
-    - **Text-to-Speech**: Click the speaker icon (🔊) to hear the suggested word read aloud.
+    - **Text-to-Speech**: Click the speaker icon (🗣️) to hear the suggested word read aloud.
     - **Illustrations**: Displays an image for the word when available, providing a visual aid for comprehension.
 
 - **Advanced Linguistic Formatting & Styling**: A dedicated "Linguistics" tab provides deep linguistic analysis and styling for French text:
