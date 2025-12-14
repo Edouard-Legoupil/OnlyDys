@@ -2,7 +2,7 @@
 
 ## Overview
 
-OnlyDys is a powerful ONLYOFFICE plugin designed to assist users with dyslexia, particularly those writing in French. It provides a suite of tools to make reading and writing more accessible, including real-time word suggestions, dyslexia-friendly document styling, and grammatical color-coding.
+OnlyDys is a privacy-first ONLYOFFICE plugin designed to assist users with dyslexia, particularly those writing in French. It provides a suite of tools to make reading and writing more accessible, including real-time word suggestions, dyslexia-friendly document styling, and grammatical color-coding.
 
 The plugin is compatible with both self-hosted and desktop versions of ONLYOFFICE editors and can be added manually to any instance.
 
