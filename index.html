@@ -27,7 +27,6 @@
     <div class="tab-bar">
         <button class="tab-button active" data-tab="suggestions">Ecrire</button>
         <button class="tab-button" data-tab="linguistics">Lire</button>
-        <button class="tab-button" data-tab="dyslexia">Simule</button>
         <button id="font-tab-btn" class="tab-button" data-tab="font" style="display: none;">Font</button>
         <button class="tab-button" data-tab="about">A propos</button>
     </div>
@@ -58,7 +57,7 @@
             </div>
 
             <div id="button_wrapper" style="margin: 10px 12px;">
-                <button id="check-text-button" class="primary" style="width: 100%;">Check</button>
+                <button id="check-text-button" class="primary" style="width: 100%;">Vérifier</button>
             </div>
 
             <div id="suggestions-container"
@@ -149,14 +148,9 @@
                 </div>
                 <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">Applique la police
                     OpenDyslexic et un espacement adapté.</p>
-            </div>
-        </div>
 
-        <!-- DYSLEXIA SIMULATION TAB -->
-        <div id="tab-dyslexia" class="tab-pane">
-            <div style="padding: 10px;">
-                <p>Cette fonction applique un effet pour simuler la façon dont une personne atteinte de dyslexie
-                    pourrait le percevoir afin de sensibiliser à la dyslexie des personnes non atteintes.</p>
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;" <h3>Simuler la dyslexie</h3>
+
 
                 <div class="toggle-switch-container" style="margin-bottom: 20px;">
                     <label class="switch">
@@ -165,8 +159,16 @@
                     </label>
                     <span id="dyslexia-sim-status" style="margin-left: 10px; font-weight: bold;">Inactif</span>
                 </div>
+                <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">Cette fonction applique un
+                    effet pour simuler la façon dont une personne atteinte de dyslexie
+                    pourrait percevoir ce document afin de mieux sensibiliser à la dyslexie des personnes qui ne le
+                    seraient pas déjà.
+                </p>
+
+
             </div>
         </div>
+
 
         <!-- FONT TAB -->
         <div id="tab-font" class="tab-pane">
@@ -198,24 +200,30 @@
 
                 <ul>
                     <li>
-                        <strong>Suggestions en temps réel:</strong> Analyse le mot courant et propose des corrections
-                        basées sur les confusions courantes.
+                        <strong>1. Suggestions en temps réel:</strong> Analyse et propose des corrections
+                        basées sur les 4 confusions les plus courantes:
                         <ul>
-                            <li><strong>Confusions Visuelles:</strong> <span class="color-sample vermilion"></span> b/d,
+                            <li> 🠲 <strong>Confusions Visuelles: ⚠️</strong> <span
+                                    class="color-sample vermilion"></span>
+                                b/d,
                                 p/q, etc.</li>
-                            <li><strong>Confusions Phonétiques:</strong> <span class="color-sample orange"></span> f/v,
+                            <li> 🠲 <strong>Confusions Phonétiques: 🔊</strong> <span
+                                    class="color-sample orange"></span>
+                                f/v,
                                 s/z, etc.</li>
-                            <li><strong>Homophones:</strong> <span class="color-sample purple"></span> a/à, et/est, etc.
+                            <li> 🠲 <strong>Homophones: 🔀</strong> <span class="color-sample purple"></span> a/à,
+                                et/est,
+                                etc.
                             </li>
-                            <li><strong>Erreurs Morphologiques:</strong> <span class="color-sample blue"></span>
+                            <li> 🠲 <strong>Erreurs Morphologiques: 📝</strong> <span class="color-sample blue"></span>
                                 accords.</li>
                         </ul>
                     </li>
                     <li>
-                        <strong>Aide à la lecture:</strong> Colorisation par catégorie grammaticale, syllabes, sons.
+                        <strong>2. Aide à la lecture:</strong> Colorisation par catégorie grammaticale, syllabes, sons.
                     </li>
                     <li>
-                        <strong>Formatage adapté:</strong> Police OpenDyslexic et espacement augmenté.
+                        <strong>3. Formatage adapté:</strong> Police OpenDyslexic et espacement augmenté.
                     </li>
                 </ul>
 

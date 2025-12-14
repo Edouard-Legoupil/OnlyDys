@@ -75,9 +75,16 @@ I have reviewed a set of existing tools (nonne being open source and working on 
 
  - [PhonoWriter](https://www.jeanclaudegabus.ch/produits/phonowriter/)
  - [Colorization](https://colorization.ch/)
+ - [LireCouleur](https://forge.apps.education.fr/lirecouleur/lirecouleur.forge.apps.education.fr)
  - [Studys](https://studys.fusofrance.org/)
  - [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
  - [Lexibar](https://www.lexibar.ca/ca/en/)
+
+The plugins integrates fonts with specific focus on dyslexia and dysgraphia:
+
+- [OpenDyslexic](https://opendyslexic.org/)
+- [Accessible-DfA](https://github.com/Orange-OpenSource/font-accessible-dfa)
+- [Luciole](https://www.luciole-vision.com/#download)
 
 ### Environment
 
