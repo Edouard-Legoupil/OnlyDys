@@ -71,7 +71,7 @@ The OnlyDys plugin will be then available in the "Plugins" tab.
 
 The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Though, this tool might support  as well other kids with similar challenges. 
 
-I have reviewed a set of existing tools (nonne being open source and working on Linux...) to build this plugin:
+I have reviewed a set of existing tools (unfortunately none being both open source and working on a Linux desktop...) and combined them to build this plugin:
 
  - [PhonoWriter](https://www.jeanclaudegabus.ch/produits/phonowriter/)
  - [Colorization](https://colorization.ch/)
@@ -88,7 +88,7 @@ The plugins integrates fonts with specific focus on dyslexia and dysgraphia:
 
 ### Environment
 
-This tool was mostly coded using vibe coding in [Antigravity](https://antigravity.google/). You can clone the repository to contribute. **To build the plugin**:
+This tool was mostly coded using vibe coding in [Antigravity](https://antigravity.google/) and [jules](https://jules.google.com). You can clone the repository to contribute. **To build the plugin**:
  - Run the build script: `python3 package_plugin.py`
  - This will create the `OnlyDys.plugin` file in the `deploy` folder.
 
