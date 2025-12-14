@@ -554,7 +554,7 @@
             container.innerHTML = ''; // Clear previous results
 
             if (text && text.trim().length > 0) {
-                const words = text.trim().split(/\\s+/);
+                const words = text.trim().split(/\s+/);
                 let motPrecedent = null;
 
                 words.forEach((motSaisi, index) => {
@@ -713,7 +713,7 @@
                             }
 
                             var allParagraphs = collectAllParagraphs(oDocument);
-                            originalDocumentModel = [];
+                            Asc.scope.originalDocumentModel = [];
 
                             function scrambleText(text) {
                                 var words = text.split(" ");
@@ -756,7 +756,7 @@
                                         });
                                     }
                                 }
-                                originalDocumentModel.push(originalParaModel);
+                                Asc.scope.originalDocumentModel.push(originalParaModel);
 
                                 oParagraph.RemoveAllElements();
                                 for (var k = 0; k < paraModel.textRuns.length; k++) {
@@ -797,12 +797,51 @@
                     window.Asc.plugin.callCommand(function () {
                         try {
                             var oDocument = Api.GetDocument();
+
+                            function collectAllParagraphs(container) {
+                                var paragraphs = [];
+                                if (!container) return [];
+                                var count = 0;
+                                try {
+                                    if (typeof container.GetElementsCount === "function") count = container.GetElementsCount();
+                                } catch (e) { return []; }
+
+                                for (var i = 0; i < count; i++) {
+                                    var el = container.GetElement(i);
+                                    if (!el) continue;
+                                    var type = el.GetClassType();
+
+                                    if (type === "paragraph") {
+                                        paragraphs.push(el);
+                                    } else if (type === "table") {
+                                        var rowCount = el.GetRowsCount();
+                                        for (var r = 0; r < rowCount; r++) {
+                                            var row = el.GetRow(r);
+                                            var cellCount = row.GetCellsCount();
+                                            for (var c = 0; c < cellCount; c++) {
+                                                var cell = row.GetCell(c);
+                                                paragraphs = paragraphs.concat(collectAllParagraphs(cell));
+                                            }
+                                        }
+                                    } else if (type === "contentControl") {
+                                        if (typeof el.GetContent === "function") {
+                                            paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
+                                        }
+                                    } else if (type === "group") {
+                                        if (typeof el.GetContent === "function") {
+                                            paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
+                                        }
+                                    }
+                                }
+                                return paragraphs;
+                            }
+
                             var allParagraphs = collectAllParagraphs(oDocument);
 
                             for (var i = 0; i < allParagraphs.length; i++) {
                                 var oParagraph = allParagraphs[i];
                                 oParagraph.RemoveAllElements();
-                                var paraModel = originalDocumentModel[i];
+                                var paraModel = Asc.scope.originalDocumentModel[i];
                                 for (var k = 0; k < paraModel.textRuns.length; k++) {
                                     var runData = paraModel.textRuns[k];
                                     var oNewRun = Api.CreateRun();
