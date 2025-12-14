@@ -59,9 +59,9 @@ To install the OnlyDys plugin:
 
  - Click **Settings** -> **Add Plugin**.
 
- - Select the `[OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin)` file.
+ - Select the [OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin) file.
     
-The OnlyDys plugin will be available in the "Plugins" tab.
+The OnlyDys plugin will be then available in the "Plugins" tab.
 
 ## Debugging
 
