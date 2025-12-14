@@ -20,7 +20,7 @@ window.OnlyDysDyslexia = (function () {
      */
     function scrambleWord(word, options) {
         const defaultOptions = {
-            minWordLength: 3,
+            minWordLength: 5,
             scrambleChance: 100
         };
         // Use Object.assign to merge user options over defaults
