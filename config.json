@@ -1,5 +1,6 @@
 {
 	"name": "OnlyDys",
+	"baseUrl": "",
 	"nameLocale": {
 		"en": "OnlyDys",
 		"fr": "OnlyDys"
@@ -22,8 +23,8 @@
 				"slide"
 			],
 			"isVisual": true,
-			"isModal": false,
-			"isInsideMode": false,
+			"isModal": true,
+			"isInsideMode": true,
 			"initDataType": "text",
 			"initData": "",
 			"isUpdateOleOnResize": false,

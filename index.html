@@ -7,6 +7,9 @@
     <script type="text/javascript" src="https://onlyoffice.github.io/sdkjs-plugins/v1/plugins.js"></script>
     <script type="text/javascript" src="https://onlyoffice.github.io/sdkjs-plugins/v1/plugins-ui.js"></script>
     <link rel="stylesheet" href="https://onlyoffice.github.io/sdkjs-plugins/v1/plugins.css">
+
+    <link rel="stylesheet" href="resources/css/plugin_style.css">
+
     <script type="text/javascript" src="scripts/logger.js"></script>
     <script type="text/javascript" src="scripts/code.js"></script>
     <script type="text/javascript" src="scripts/ui.js"></script>
@@ -18,58 +21,218 @@
     <script type="text/javascript" src="scripts/selectionManager.js"></script>
     <script type="text/javascript" src="scripts/configManager.js"></script>
     <script type="text/javascript" src="scripts/plugin.js"></script>
-
-    <link rel="stylesheet" href="resources/css/plugin_style.css">
-
-    <style>
-        body {
-            font-family: 'OpenDyslexic', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .tab-bar {
-            display: flex;
-            border-bottom: 1px solid #ccc;
-        }
-
-        .tab-button {
-            flex: 1;
-            padding: 10px;
-            cursor: pointer;
-            text-align: center;
-            border: none;
-            background-color: #f1f1f1;
-            outline: none;
-        }
-
-        .tab-button.active {
-            background-color: #ccc;
-        }
-
-        .tab-content {
-            flex: 1;
-            padding: 10px;
-            overflow-y: auto;
-        }
-    </style>
 </head>
 
 <body>
     <div class="tab-bar">
-        <button class="tab-button active" data-tab="suggestions">Suggestions</button>
-        <button class="tab-button" data-tab="dyslexia">Dyslexia</button>
-        <button class="tab-button" data-tab="linguistics">Linguistics</button>
+        <button class="tab-button active" data-tab="suggestions">Ecrire</button>
+        <button class="tab-button" data-tab="linguistics">Lire</button>
+        <button class="tab-button" data-tab="dyslexia">Simule</button>
         <button id="font-tab-btn" class="tab-button" data-tab="font" style="display: none;">Font</button>
+        <button class="tab-button" data-tab="about">A propos</button>
     </div>
 
     <div id="tab-content" class="tab-content">
-        <!-- Content will be loaded here -->
+        <!-- SUGGESTIONS TAB -->
+        <div id="tab-suggestions" class="tab-pane active">
+            <div style="margin: 12px 12px 4px 12px; width: calc(100% - 24px);">
+                <div id="mode-switch" style="margin-bottom: 10px;">
+                    <label class="radio-label">
+                        <input type="radio" name="suggestion-mode" value="selection" checked> Selection
+                    </label>
+                    <label class="radio-label" style="margin-left: 10px;">
+                        <input type="radio" name="suggestion-mode" value="onthego"> Au fur et à mesure
+                    </label>
+                </div>
+                <!-- Hidden button for now as Logic is handled by radio change or auto-fetch -->
+                <label id="paste-selection" class="unselectable"
+                    style="float: right; border-bottom: 1px dotted rgba(0,0,0, 0.4); cursor: pointer; display:none;">Paste
+                    Selection</label>
+            </div>
+
+            <div id="enter_container" class="form-control"
+                style="cursor: text; position: relative; margin: 0px 12px 0px 12px; min-height: 80px; max-height: 45%; height: fit-content; background: #fff; border: 1px solid #ccc; padding: 5px;">
+                <div id="textarea" contenteditable="true"
+                    style="min-width: 95%; max-width: 95%; height: fit-content; outline: none; white-space: normal; word-wrap: break-word;">
+                </div>
+            </div>
+
+            <div id="button_wrapper" style="margin: 10px 12px;">
+                <button id="check-text-button" class="primary" style="width: 100%;">Check</button>
+            </div>
+
+            <div id="suggestions-container"
+                style="position: relative; width: calc(100% - 24px); margin: 0 12px; overflow-y: auto;">
+                <!-- Suggestions will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- LINGUISTICS TAB -->
+        <div id="tab-linguistics" class="tab-pane">
+            <div class="linguistics-container">
+
+                <div class="control-group">
+                    <label class="section-label">Mode d'aide à la lecture:</label>
+                    <div class="radio-group" id="ling-mode-radios">
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="none" checked> Aucun
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="grammar"> Catégories grammaticales
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="phonemes"> Phonèmes
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="syllables"> Syllabes
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="silent"> Lettres silencieuses
+                        </label>
+                        <!-- 
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="words"> Mots
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="ling-mode" value="lines"> Lignes
+                        </label> 
+                        -->
+                    </div>
+                </div>
+
+                <div id="ling-options"
+                    style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; min-height: 20px;">
+                    <!-- Conditional Options -->
+                    <div id="opt-container-syllables" class="conditional-opt" style="display:none;">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="opt-arcs">
+                            <label for="opt-arcs">Arcs des syllabes</label>
+                        </div>
+                    </div>
+
+                    <div id="opt-container-silent" class="conditional-opt" style="display:none;">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="opt-silent">
+                            <label for="opt-silent">Lettres silencieuses (gris)</label>
+                        </div>
+                    </div>
+
+                    <div id="opt-container-grammar" class="conditional-opt" style="display:none;">
+                        <div id="color-legend" class="color-legend"></div>
+                    </div>
+                </div>
+
+                <!-- Preview area removed for compactness or keep if needed. Keeping it for now. -->
+                <div class="preview-area">
+                    <strong>Aperçu:</strong>
+                    <div id="ling-preview">L'oiseau chante sur la branche.</div>
+                </div>
+
+                <div class="actions">
+                    <button id="btn-apply-ling" class="primary">Appliquer</button>
+                    <button id="btn-reset-ling">Effacer</button>
+                </div>
+
+                <div id="ling-status" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+
+                <h3>Formatage</h3>
+
+                <div class="toggle-switch-container">
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-global-style">
+                        <span class="slider round"></span>
+                    </label>
+                    <span id="global-style-status" style="margin-left: 10px; font-weight: bold;">Désactivé</span>
+                </div>
+                <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">Applique la police
+                    OpenDyslexic et un espacement adapté.</p>
+            </div>
+        </div>
+
+        <!-- DYSLEXIA SIMULATION TAB -->
+        <div id="tab-dyslexia" class="tab-pane">
+            <div style="padding: 10px;">
+                <p>Cette fonction applique un effet pour simuler la façon dont une personne atteinte de dyslexie
+                    pourrait le percevoir.</p>
+
+                <div class="toggle-switch-container" style="margin-bottom: 20px;">
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-dyslexia-sim">
+                        <span class="slider round"></span>
+                    </label>
+                    <span id="dyslexia-sim-status" style="margin-left: 10px; font-weight: bold;">Inactif</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FONT TAB -->
+        <div id="tab-font" class="tab-pane">
+            <div style="padding: 10px;">
+                <div id="font-status"></div>
+                <div id="font-instructions" style="display:none;">
+                    <p>Pour ameliorer la lisibilite, ce plugin uitilise la police "OpenDyslexic". Veuillez suivre ces
+                        instructions pour l'installer:</p>
+                    <ol>
+                        <li>Téléchargez la police depuis le site officiel: <a href="https://opendyslexic.org/"
+                                target="_blank">OpenDyslexic.org</a></li>
+                        <li>Suivez les instructions d'installation pour votre système d'exploitation (Windows, macOS, ou
+                            Linux).
+                        </li>
+                        <li>Une fois installé, redémarrez votre editeur ONLYOFFICE pour que la police soit disponible.
+                        </li>
+                    </ol>
+                </div>
+                <button id="check-font-button" class="primary" style="margin-top: 10px;">Re-check Font
+                    Installation</button>
+            </div>
+        </div>
+
+        <!-- ABOUT TAB -->
+        <div id="tab-about" class="tab-pane">
+            <div class="about-container">
+                <p>Ce plugin implémente un ensemble d'algorithmes pour aider les personnes dyslexiques (en français).
+                </p>
+
+                <ul>
+                    <li>
+                        <strong>Suggestions en temps réel:</strong> Analyse le mot courant et propose des corrections
+                        basées sur les confusions courantes.
+                        <ul>
+                            <li><strong>Confusions Visuelles:</strong> <span class="color-sample vermilion"></span> b/d,
+                                p/q, etc.</li>
+                            <li><strong>Confusions Phonétiques:</strong> <span class="color-sample orange"></span> f/v,
+                                s/z, etc.</li>
+                            <li><strong>Homophones:</strong> <span class="color-sample purple"></span> a/à, et/est, etc.
+                            </li>
+                            <li><strong>Erreurs Morphologiques:</strong> <span class="color-sample blue"></span>
+                                accords.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Aide à la lecture:</strong> Colorisation par catégorie grammaticale, syllabes, sons.
+                    </li>
+                    <li>
+                        <strong>Formatage adapté:</strong> Police OpenDyslexic et espacement augmenté.
+                    </li>
+                </ul>
+
+                <p>Le projet est <a href="https://github.com/Edouard-Legoupil/OnlyDys" target="_blank">open-source</a>.
+                    Vous utilisez la version 0.1.0 et pouvez <a
+                        href="https://github.com/Edouard-Legoupil/OnlyDys/issues/new" target="_blank">signaler ici un
+                        problème</a></p>
+            </div>
+        </div>
     </div>
+
+    <!-- Shared Placeholder function for TTS -->
+    <script>
+        function lireMot(word) {
+            console.log("Lecture du mot :", word);
+            // Future implementation: TTS API
+        }
+    </script>
 </body>
 
 </html>

@@ -55,9 +55,16 @@ The plugin is compatible with both self-hosted and desktop versions of ONLYOFFIC
 
 To install the OnlyDys plugin:
 
-1.  **Download the Plugin**: Download this repository as a ZIP file and rename the extension as .plugin.
-2.  **Add the Plugin**: In `OnlyDys` open the plugin manager, click to "available plugin", then "install the plugin manually".
-3.  **Use in ONLYOFFICE**: the OnlyDys plugin will be available in the "Plugins" tab.
+1.  **Build the Plugin**:
+    - Run the build script: `python3 package_plugin.py`
+    - This will create a `deploy` folder containing `OnlyDys.plugin`.
+
+2.  **Add the Plugin**: 
+    - In `OnlyOffice Desktop Editors`, open the **Plugins** tab.
+    - Click **Settings** -> **Add Plugin**.
+    - Select the `deploy/OnlyDys.plugin` file.
+    
+3.  **Use in ONLYOFFICE**: The OnlyDys plugin will be available in the "Plugins" tab.
 
 ## Debugging
 
@@ -80,6 +87,14 @@ The plugin includes a suite of unit tests to ensure that the core logic is worki
 
 ## Dev
 
-The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Thought, this tool might support other kids with same challenges as well. 
+The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Though, this tool might support other kids with same challenges as well. 
+
+I have reviewed a set of existing tools (nonne being open source and working on Linux...) to build this plugin:
+
+ - [PhonoWriter](https://www.jeanclaudegabus.ch/produits/phonowriter/)
+ - [Colorization](https://colorization.ch/)
+ - [Studys](https://studys.fusofrance.org/)
+ - [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
+ - [Lexibar](https://www.lexibar.ca/ca/en/)
 
 If you spot any issue or have any ideas of additional features or capabilities, please [create an issue here](https://github.com/Edouard-Legoupil/OnlyDys/issues/new).

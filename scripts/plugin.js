@@ -9,32 +9,37 @@
         };
     }
 
-    // Function to load tab content
-    async function loadTab(tabName) {
-        const tabContent = document.getElementById('tab-content');
-        if (!tabContent) return;
-
-        try {
-            const response = await fetch(`${tabName}.html`);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+    // Function to switch tabs
+    function loadTab(tabName) {
+        // Toggle Active Class on Buttons
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(btn => {
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
             }
-            tabContent.innerHTML = await response.text();
+        });
 
-            // Initialize the specific tab's functionality
-            if (tabName === 'suggestions') {
-                initSuggestionsTab();
-            } else if (tabName === 'font') {
-                initFontTab();
-            } else if (tabName === 'dyslexia') {
-                initDyslexiaTab();
-            } else if (tabName === 'linguistics') {
-                initLinguisticsTab();
+        // Toggle Visibility of Tab Panes
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        tabPanes.forEach(pane => {
+            if (pane.id === `tab-${tabName}`) {
+                pane.classList.add('active');
+            } else {
+                pane.classList.remove('active');
             }
+        });
 
-        } catch (error) {
-            logger.error('Error loading tab:', error);
-            tabContent.innerHTML = '<p>Error loading content.</p>';
+        // Initialize specific tab logic if needed (idempotent init is best)
+        if (tabName === 'suggestions') {
+            initSuggestionsTab();
+        } else if (tabName === 'font') {
+            initFontTab();
+        } else if (tabName === 'dyslexia') {
+            initDyslexiaTab();
+        } else if (tabName === 'linguistics') {
+            initLinguisticsTab();
         }
     }
 
@@ -165,6 +170,14 @@
                 if (pasteSelectionButton) pasteSelectionButton.style.display = 'block';
                 if (checkTextButton) checkTextButton.style.display = 'block';
                 stopPolling();
+
+                // FIX: Automatically fetch selection when entering Selection mode
+                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                    if (text) {
+                        document.getElementById('textarea').innerText = text;
+                        processSuggestions(text);
+                    }
+                });
             }
         }
 
@@ -213,40 +226,53 @@
         if (dyslexiaToggle) {
             dyslexiaToggle.addEventListener('change', function (e) {
                 if (e.target.checked) {
-                    // Activate Simulation
-                    window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                        if (text && text.length > 0) {
-                            // Store original for revert
-                            if (window.OnlyDysDyslexia && window.OnlyDysDyslexia.storeOriginal) {
-                                window.OnlyDysDyslexia.storeOriginal(text);
-                            }
+                    // Activate Simulation - Select All First
+                    window.Asc.plugin.callCommand(function () {
+                        var oDocument = Api.GetDocument();
+                        var oRange = oDocument.GetRange(0, -1); // Get range of entire document
+                        oRange.Select();
+                    }, false, true, function () {
+                        // After selection is complete
+                        window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                            if (text && text.length > 0) {
+                                // Store original for revert
+                                if (window.OnlyDysDyslexia && window.OnlyDysDyslexia.storeOriginal) {
+                                    window.OnlyDysDyslexia.storeOriginal(text);
+                                }
 
-                            // Process and Paste
-                            const processedText = window.OnlyDysDyslexia.processText(text);
-                            window.Asc.plugin.executeMethod("PasteContent", [processedText]);
+                                // Process and Paste
+                                const processedText = window.OnlyDysDyslexia.processText(text);
+                                window.Asc.plugin.executeMethod("PasteContent", [processedText]);
 
-                            if (dyslexiaStatus) {
-                                dyslexiaStatus.textContent = "Active";
-                                dyslexiaStatus.style.color = "green";
+                                if (dyslexiaStatus) {
+                                    dyslexiaStatus.textContent = "Active";
+                                    dyslexiaStatus.style.color = "green";
+                                }
+                            } else {
+                                // No text found even after Select All?
+                                e.target.checked = false;
+                                alert("Document appears empty. Please add text to simulate dyslexia.");
                             }
-                        } else {
-                            // No text selected, revert toggle
-                            e.target.checked = false;
-                            alert("Please select text to simulate dyslexia.");
-                        }
+                        });
                     });
                 } else {
-                    // Deactivate / Revert
-                    if (window.OnlyDysDyslexia && window.OnlyDysDyslexia.getOriginal) {
-                        const original = window.OnlyDysDyslexia.getOriginal();
-                        if (original) {
-                            window.Asc.plugin.executeMethod("PasteContent", [original]);
+                    // Deactivate / Revert - Select All First to ensure we replace everything
+                    window.Asc.plugin.callCommand(function () {
+                        var oDocument = Api.GetDocument();
+                        var oRange = oDocument.GetRange(0, -1);
+                        oRange.Select();
+                    }, false, true, function () {
+                        if (window.OnlyDysDyslexia && window.OnlyDysDyslexia.getOriginal) {
+                            const original = window.OnlyDysDyslexia.getOriginal();
+                            if (original) {
+                                window.Asc.plugin.executeMethod("PasteContent", [original]);
+                            }
                         }
-                    }
-                    if (dyslexiaStatus) {
-                        dyslexiaStatus.textContent = "Inactive";
-                        dyslexiaStatus.style.color = "inherit";
-                    }
+                        if (dyslexiaStatus) {
+                            dyslexiaStatus.textContent = "Inactive";
+                            dyslexiaStatus.style.color = "inherit";
+                        }
+                    });
                 }
             });
         }
@@ -293,8 +319,6 @@
         const tabButtons = document.querySelectorAll('.tab-button');
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
                 loadTab(button.dataset.tab);
             });
         });

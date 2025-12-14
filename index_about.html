@@ -1,53 +1,57 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-     <meta charset="UTF-8">
-     <title>About</title>
-     <script type="text/javascript" src="https://onlyoffice.github.io/sdkjs-plugins/v1/plugins.js"></script>
-     <script type="text/javascript">
-         window.Asc.plugin.init = function()
-         {
-             this.resizeWindow(400, 130, 400, 130, 400, 130);
-         };
-         window.Asc.plugin.button = function(id)
-         {
-             this.executeCommand("close", "");
-         };
-     </script>
-     <style>
-         p, a{
-             font-size: 12px;
-             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-         }
- 
-         a:link {
-             color: darkgrey;
-         }
- 
-         /* visited link */
-         a:visited {
-             color: darkgrey;
-         }
- 
-         /* mouse over link */
-         a:hover {
-             color: #8d8d8d;
-         }
- 
-         /* selected link */
-         a:active {
-             color: darkgrey;
-         }
-         ul {
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>About</title>
+    <script type="text/javascript" src="https://onlyoffice.github.io/sdkjs-plugins/v1/plugins.js"></script>
+    <script type="text/javascript">
+        window.Asc.plugin.init = function () {
+            this.resizeWindow(400, 130, 400, 130, 400, 130);
+        };
+        window.Asc.plugin.button = function (id) {
+            this.executeCommand("close", "");
+        };
+    </script>
+    <style>
+        p,
+        a {
+            font-size: 12px;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        a:link {
+            color: darkgrey;
+        }
+
+        /* visited link */
+        a:visited {
+            color: darkgrey;
+        }
+
+        /* mouse over link */
+        a:hover {
+            color: #8d8d8d;
+        }
+
+        /* selected link */
+        a:active {
+            color: darkgrey;
+        }
+
+        ul {
             list-style-type: none;
             padding-left: 0;
         }
+
         li {
             margin-bottom: 15px;
         }
+
         strong {
             font-weight: bold;
         }
+
         .color-sample {
             display: inline-block;
             width: 12px;
@@ -55,57 +59,31 @@
             margin-right: 5px;
             border-radius: 2px;
         }
-        .red { background-color: #ff0000; }
-        .orange { background-color: #ffa500; }
-        .purple { background-color: #800080; }
-        .blue { background-color: #0000ff; }
-     </style>
- </head>
- <body style="padding-left: 20px; padding-right: 20px">
-     <p style="font-size: 15px" id="p1">This plugin implements a set of algorithms to support people with Dyxlexia specific needs in French. </p>
-     <p style="font-size: 12px" id="p2">It aims to fill a critical gap in the open source space on that topic. It brings the following features: </p>
-     <ul>
-        <li>
-            <strong>Real-time Word Suggestions:</strong> As you type, OnlyDys analyzes the current word and provides a list of suggestions in a side panel. The suggestion algorithm is tailored for common dyslexic errors and considers:
-            <ul>
-                <li><strong>Phonetic Similarity:</strong> Suggests words that sound similar (e.g., "au" vs. "eau").</li>
-                <li><strong>Orthographic Similarity:</strong> Corrects common spelling mistakes based on Levenshtein distance.</li>
-                <li><strong>Contextual Analysis:</strong> Prioritizes suggestions based on the preceding word's grammatical category (e.g., suggesting a noun after a determiner).</li>
-            </ul>
-        </li>
-        <li>
-            <strong>Suggestion Classification:</strong> Each suggestion is categorized and color-coded to help the user understand the nature of the potential error:
-            <ul>
-                <li><span class="color-sample red"></span> <strong>Visual Confusion:</strong> Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).</li>
-                <li><span class="color-sample orange"></span> <strong>Phonetic Confusion:</strong> Indicates words that are spelled differently but sound similar.</li>
-                <li><span class="color-sample purple"></span> <strong>Homophones:</strong> Flags words that sound the same but have different meanings and spellings.</li>
-                <li><span class="color-sample blue"></span> <strong>Morphological Errors:</strong> Catches common mistakes in word endings, like pluralization or conjugation.</li>
-            </ul>
-        </li>
-        <li>
-            <strong>Interactive Suggestion Cards:</strong> Each suggestion is displayed on an interactive card:
-            <ul>
-                <li><strong>Click to Replace:</strong> Simply click the card to replace the word in the document with the suggestion.</li>
-                <li><strong>Text-to-Speech:</strong> Click the speaker icon (🔊) to hear the suggested word read aloud.</li>
-                <li><strong>Illustrations:</strong> Displays an image for the word when available, providing a visual aid for comprehension.</li>
-            </ul>
-        </li>
-        <li>
-            <strong>Dyslexia-Friendly Document Styling:</strong> With a single click, you can apply a set of dyslexia-friendly styles to the entire document:
-            <ul>
-                <li><strong>OpenDyslexic Font:</strong> The entire document's font is changed to <a href="https://opendyslexic.org/" target="_blank">OpenDyslexic</a>, a typeface designed to increase readability for people with dyslexia.</li>
-                <li><strong>Enhanced Spacing:</strong> Increased line and letter spacing is applied to reduce visual stress and improve readability.</li>
-            </ul>
-        </li>
-        <li>
-            <strong>Grammatical Color-Coding:</strong> This feature applies a distinct color to words based on their grammatical category (noun, verb, adjective, etc.), helping users to better understand sentence structure. A legend is displayed in the plugin panel.
-        </li>
-    </ul>
 
+        .red {
+            background-color: #ff0000;
+        }
 
-     <p style="font-size: 12px" id="p2">The primary user is my daughter, Lisa, and its schoool in Normandy. Thought, it might support as well other kids with same challenges. </p>
-    
-      <p style="font-size: 12px" id="p2">If you spot any issue or have any ideas of additional features or capabilities, please <a href="https://github.com/Edouard-Legoupil/OnlyDys/issues/new" target="_blank">create an issue here</a></p>
-     <p>Version: 0.1</p>
- </body>
- </html>
+        .orange {
+            background-color: #ffa500;
+        }
+
+        .purple {
+            background-color: #800080;
+        }
+
+        .blue {
+            background-color: #0000ff;
+        }
+    </style>
+</head>
+
+<body style="padding-left: 20px; padding-right: 20px">
+    <p style="font-size: 15px" id="p1">Algorithms to support people with Dyslexia Specific Needs in French</p>
+    <p style="font-size: 12px" id="p2">It aims to fill a critical gap in the open source space on that topic. For issues
+        or feature requests, please <a href="https://github.com/Edouard-Legoupil/OnlyDys/issues/new"
+            target="_blank">create an issue here</a></p>
+    <p>Version: 0.1</p>
+</body>
+
+</html>
