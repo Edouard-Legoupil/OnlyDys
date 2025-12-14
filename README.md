@@ -64,7 +64,10 @@ To install the OnlyDys plugin:
 The OnlyDys plugin will be then available in the "Plugins" tab.
 
 
-## Dev
+## Development
+
+
+### Background 
 
 The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Though, this tool might support  as well other kids with similar challenges. 
 
@@ -76,15 +79,14 @@ I have reviewed a set of existing tools (nonne being open source and working on 
  - [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
  - [Lexibar](https://www.lexibar.ca/ca/en/)
 
+### Environment
+
 This tool was mostly coded using vibe coding in [Antigravity](https://antigravity.google/). You can clone the repository to contribute. **To build the plugin**:
  - Run the build script: `python3 package_plugin.py`
  - This will create the `OnlyDys.plugin` file in the `deploy` folder.
 
 If you spot any issue or have any ideas of additional features or capabilities, please [create an issue here](https://github.com/Edouard-Legoupil/OnlyDys/issues/new).
 
-## Debugging
-
-The OnlyDys plugin includes a logging framework and a suite of unit tests to aid in debugging and development.
 
 ### Viewing Logs
 
