@@ -75,10 +75,8 @@
         }
     }
 
-    const LINGUISTIC_ENGINE_SOURCE = `(function (window) {
-    'use strict';
-
-    const VOWELS = [
+    const LINGUISTIC_ENGINE_SOURCE = `
+    var VOWELS = [
         "a", "à", "â",
         "e", "é", "è", "ê", "ë",
         "i", "î", "ï",
@@ -88,9 +86,9 @@
         "œ", "æ"
     ];
 
-    const VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
+    var VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
 
-    const MULTI_PHONEMES = [
+    var MULTI_PHONEMES = [
         "eau", "eaux",
         "ain", "aim", "ein", "eim",
         "ien",
@@ -104,27 +102,28 @@
         "ill"
     ];
 
-    const SILENT_ENDINGS = [
+    var SILENT_ENDINGS = [
         "ent", "es", "e", "s", "t", "d", "p", "x"
     ];
 
-    const LinguisticEngine = {
+    var LinguisticEngine = {
         normalizeFrench: function (text) { if (!text) return ""; return text.toLowerCase().normalize("NFC"); },
-        isVowel: function (char) { return VOWELS.includes(char.toLowerCase()); },
+        isVowel: function (char) { return VOWELS.indexOf(char.toLowerCase()) !== -1; },
         isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâçéèêëîïôùûüœæ]/i.test(char); },
         isPunctuation: function (char) { return /\\p{P}/u.test(char); },
-        tokenizeWords: function (text) { return text.match(/\\p{L}+['’-]?\\p{L}*/gu) || []; },
+        tokenizeWords: function (text) { return text.match(/\\p{L}+[''-]?\\p{L}*/gu) || []; },
         segmentPhonemes: function (word) {
-            const normalizedWord = this.normalizeFrench(word);
-            const phonemes = [];
-            let i = 0;
+            var normalizedWord = this.normalizeFrench(word);
+            var phonemes = [];
+            var i = 0;
             while (i < normalizedWord.length) {
-                let matched = false;
-                for (const p of MULTI_PHONEMES) {
-                    if (normalizedWord.startsWith(p, i)) {
-                        const isNasalCandidate = (p.endsWith("n") || p.endsWith("m")) && p.length <= 4 && !["gn"].includes(p);
+                var matched = false;
+                for (var pIdx = 0; pIdx < MULTI_PHONEMES.length; pIdx++) {
+                    var p = MULTI_PHONEMES[pIdx];
+                    if (normalizedWord.indexOf(p, i) === i) {
+                        var isNasalCandidate = (p.charAt(p.length - 1) === "n" || p.charAt(p.length - 1) === "m") && p.length <= 4 && p !== "gn";
                         if (isNasalCandidate) {
-                            const nextChar = normalizedWord[i + p.length];
+                            var nextChar = normalizedWord.charAt(i + p.length);
                             if (nextChar) {
                                 if (this.isVowel(nextChar)) continue;
                                 if (nextChar === 'n' || nextChar === 'm') continue;
@@ -133,19 +132,19 @@
                         phonemes.push(p); i += p.length; matched = true; break;
                     }
                 }
-                if (!matched) { phonemes.push(normalizedWord[i]); i++; }
+                if (!matched) { phonemes.push(normalizedWord.charAt(i)); i++; }
             }
             return phonemes;
         },
         segmentSyllables: function (word) {
-            const phonemes = this.segmentPhonemes(word);
-            const syllables = [];
-            let current = [];
-            for (let i = 0; i < phonemes.length; i++) {
+            var phonemes = this.segmentPhonemes(word);
+            var syllables = [];
+            var current = [];
+            for (var i = 0; i < phonemes.length; i++) {
                 current.push(phonemes[i]);
                 if (VOWEL_REGEX.test(phonemes[i])) {
-                    const next = phonemes[i + 1];
-                    const nextNext = phonemes[i + 2];
+                    var next = phonemes[i + 1];
+                    var nextNext = phonemes[i + 2];
                     if (next && !VOWEL_REGEX.test(next)) {
                         if (nextNext && !VOWEL_REGEX.test(nextNext)) { current.push(next); i++; syllables.push(current); current = []; }
                         else { syllables.push(current); current = []; }
@@ -154,21 +153,25 @@
             }
             if (current.length) {
                 if (syllables.length > 0) {
-                    const currentHasVowel = current.some(p => VOWEL_REGEX.test(p));
+                    var currentHasVowel = false;
+                    for (var j = 0; j < current.length; j++) {
+                        if (VOWEL_REGEX.test(current[j])) { currentHasVowel = true; break; }
+                    }
                     if (!currentHasVowel) syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
                     else syllables.push(current);
                 } else syllables.push(current);
             }
-            return syllables.map(s => s.join(""));
+            return syllables.map(function(s) { return s.join(""); });
         },
         detectSilentLetters: function (word) {
             if (!word) return [];
-            const silentIndexes = [];
-            const lower = word.toLowerCase();
-            for (const end of SILENT_ENDINGS) {
-                if (lower.endsWith(end) && lower.length > end.length) {
-                    const startIndex = lower.length - end.length;
-                    for (let i = startIndex; i < lower.length; i++) {
+            var silentIndexes = [];
+            var lower = word.toLowerCase();
+            for (var eIdx = 0; eIdx < SILENT_ENDINGS.length; eIdx++) {
+                var end = SILENT_ENDINGS[eIdx];
+                if (lower.length > end.length && lower.indexOf(end, lower.length - end.length) !== -1) {
+                    var startIndex = lower.length - end.length;
+                    for (var i = startIndex; i < lower.length; i++) {
                         if (silentIndexes.indexOf(i) === -1) silentIndexes.push(i);
                     }
                     break;
@@ -179,13 +182,10 @@
         analyzeWord: function (word) {
             return { original: word, phonemes: this.segmentPhonemes(word), syllables: this.segmentSyllables(word), silentLetters: this.detectSilentLetters(word) };
         }
-    };
-    window.LinguisticEngine = LinguisticEngine;
-})(window);`;
+    };`;
 
-    const COLORIZATION_ENGINE_SOURCE = `(function (window) {
-    'use strict';
-    const ColorizationEngine = {
+    const COLORIZATION_ENGINE_SOURCE = `
+    var ColorizationEngine = {
         palettes: {
             phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
             syllables: ["#D55E00", "#0072B2"],
@@ -195,72 +195,78 @@
             grammar: { 'NOM': '#D55E00', 'VER': '#0072B2', 'ADJ': '#56B4E9', 'ADV': '#009E73', 'PRO': '#E69F00', 'DET': '#CC79A7', 'PRE': '#000000', 'CON': '#999999', 'INT': '#F0E442' }
         },
         processModel: function (model, config) {
-            const processedModel = JSON.parse(JSON.stringify(model));
-            let wordMap = null;
-            if (config.mode === 'grammar' && window.OnlyDysLogic && window.OnlyDysLogic.dictionary) {
-                wordMap = new Map(window.OnlyDysLogic.dictionary.map(entry => [entry.w.toLowerCase(), entry.g]));
-            }
-            processedModel.paragraphs.forEach(para => {
-                const newRuns = [];
-                para.textRuns.forEach(run => {
+            var processedModel = JSON.parse(JSON.stringify(model));
+            var wordMap = null;
+            processedModel.paragraphs.forEach(function(para) {
+                var newRuns = [];
+                para.textRuns.forEach(function(run) {
                     if (!run.text) return;
-                    const transformedRuns = this.processRun(run, config, wordMap);
-                    newRuns.push(...transformedRuns);
+                    var transformedRuns = ColorizationEngine.processRun(run, config, wordMap);
+                    newRuns.push.apply(newRuns, transformedRuns);
                 });
                 para.textRuns = newRuns;
             });
             return processedModel;
         },
         processRun: function (run, config, wordMap) {
-            const originalText = run.text;
-            const engine = window.LinguisticEngine;
-            const newRuns = [];
-            const addSegment = (text, color, extraFormatting = {}) => {
-                newRuns.push({ text: text, formatting: { ...run.formatting, color: color || run.formatting.color, ...extraFormatting } });
+            var originalText = run.text;
+            var engine = LinguisticEngine;
+            var newRuns = [];
+            var addSegment = function(text, color, extraFormatting) {
+                extraFormatting = extraFormatting || {};
+                var formatting = {};
+                for (var key in run.formatting) {
+                    formatting[key] = run.formatting[key];
+                }
+                formatting.color = color || run.formatting.color;
+                for (var key in extraFormatting) {
+                    formatting[key] = extraFormatting[key];
+                }
+                newRuns.push({ text: text, formatting: formatting });
             };
             if (config.mode === 'grammar') {
-                const words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(token => {
+                var words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(function(token) {
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    const lowerWord = token.toLowerCase();
-                    const grammar = wordMap ? wordMap.get(lowerWord) : null;
-                    let color = null;
-                    if (grammar && this.palettes.grammar[grammar]) color = this.palettes.grammar[grammar];
+                    var lowerWord = token.toLowerCase();
+                    var grammar = wordMap ? wordMap.get(lowerWord) : null;
+                    var color = null;
+                    if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
                     addSegment(token, color);
                 });
             } else if (config.mode === 'phonemes') {
-                const words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(token => {
+                var words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(function(token) {
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    const analysis = engine.analyzeWord(token);
-                    analysis.phonemes.forEach((p, idx) => {
-                        const colorIndex = Math.abs(this.hashCode(p.toLowerCase())) % this.palettes.phonemes.length;
-                        const color = this.palettes.phonemes[colorIndex];
+                    var analysis = engine.analyzeWord(token);
+                    analysis.phonemes.forEach(function(p, idx) {
+                        var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
+                        var color = ColorizationEngine.palettes.phonemes[colorIndex];
                         addSegment(p, color);
                     });
                 });
             } else if (config.mode === 'syllables') {
-                const words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(token => {
+                var words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(function(token) {
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    const syllables = engine.segmentSyllables(token);
-                    syllables.forEach((s, idx) => {
-                        const color = this.palettes.syllables[idx % 2];
+                    var syllables = engine.segmentSyllables(token);
+                    syllables.forEach(function(s, idx) {
+                        var color = ColorizationEngine.palettes.syllables[idx % 2];
                         addSegment(s, color);
                     });
                 });
             } else if (config.mode === 'silent') {
-                const words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(token => {
+                var words = originalText.split(/(\\P{L}+)/u);
+                words.forEach(function(token) {
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    const silentIndices = engine.detectSilentLetters(token);
+                    var silentIndices = engine.detectSilentLetters(token);
                     if (silentIndices.length === 0) { addSegment(token, null); }
                     else {
-                        let lastIdx = 0;
-                        for (let i = 0; i < token.length; i++) {
-                            if (silentIndices.includes(i)) {
+                        var lastIdx = 0;
+                        for (var i = 0; i < token.length; i++) {
+                            if (silentIndices.indexOf(i) !== -1) {
                                 if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
-                                addSegment(token[i], this.palettes.silent);
+                                addSegment(token.charAt(i), ColorizationEngine.palettes.silent);
                                 lastIdx = i + 1;
                              }
                         }
@@ -271,13 +277,11 @@
             return newRuns;
         },
         hashCode: function (str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+            var hash = 0;
+            for (var i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
             return hash;
         }
-    };
-    window.ColorizationEngine = ColorizationEngine;
-})(window);`;
+    };`;
 
     function initLinguisticsTab() {
         const styleToggle = document.getElementById('toggle-global-style');
@@ -403,10 +407,218 @@
 
         window.Asc.plugin.callCommand(function () {
             try {
-                eval(Asc.scope.linguisticScript);
-                eval(Asc.scope.colorizationScript);
+                if (typeof Api === 'undefined') {
+                    return "ERROR: Api is not defined";
+                }
+
+                // Inline LinguisticEngine (no eval needed)
+                var VOWELS = ["a", "à", "â", "e", "é", "è", "ê", "ë", "i", "î", "ï", "o", "ô", "u", "ù", "û", "ü", "y", "œ", "æ"];
+                var VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
+                var MULTI_PHONEMES = ["eau", "eaux", "ain", "aim", "ein", "eim", "ien", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "ch", "ph", "th", "gn", "qu", "gu", "ill"];
+                var SILENT_ENDINGS = ["ent", "es", "e", "s", "t", "d", "p", "x"];
+
+                var LinguisticEngine = {
+                    normalizeFrench: function (text) { if (!text) return ""; return text.toLowerCase().normalize("NFC"); },
+                    isVowel: function (char) { return VOWELS.indexOf(char.toLowerCase()) !== -1; },
+                    isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâçéèêëîïôùûüœæ]/i.test(char); },
+                    isPunctuation: function (char) { return /\p{P}/u.test(char); },
+                    segmentPhonemes: function (word) {
+                        var normalizedWord = this.normalizeFrench(word);
+                        var phonemes = [];
+                        var i = 0;
+                        while (i < normalizedWord.length) {
+                            var matched = false;
+                            for (var pIdx = 0; pIdx < MULTI_PHONEMES.length; pIdx++) {
+                                var p = MULTI_PHONEMES[pIdx];
+                                if (normalizedWord.indexOf(p, i) === i) {
+                                    var isNasalCandidate = (p.charAt(p.length - 1) === "n" || p.charAt(p.length - 1) === "m") && p.length <= 4 && p !== "gn";
+                                    if (isNasalCandidate) {
+                                        var nextChar = normalizedWord.charAt(i + p.length);
+                                        if (nextChar) {
+                                            if (this.isVowel(nextChar)) continue;
+                                            if (nextChar === 'n' || nextChar === 'm') continue;
+                                        }
+                                    }
+                                    phonemes.push(p); i += p.length; matched = true; break;
+                                }
+                            }
+                            if (!matched) { phonemes.push(normalizedWord.charAt(i)); i++; }
+                        }
+                        return phonemes;
+                    },
+                    segmentSyllables: function (word) {
+                        var phonemes = this.segmentPhonemes(word);
+                        var syllables = [];
+                        var current = [];
+                        for (var i = 0; i < phonemes.length; i++) {
+                            current.push(phonemes[i]);
+                            if (VOWEL_REGEX.test(phonemes[i])) {
+                                var next = phonemes[i + 1];
+                                var nextNext = phonemes[i + 2];
+                                if (next && !VOWEL_REGEX.test(next)) {
+                                    if (nextNext && !VOWEL_REGEX.test(nextNext)) { current.push(next); i++; syllables.push(current); current = []; }
+                                    else { syllables.push(current); current = []; }
+                                } else { syllables.push(current); current = []; }
+                            }
+                        }
+                        if (current.length) {
+                            if (syllables.length > 0) {
+                                var currentHasVowel = false;
+                                for (var j = 0; j < current.length; j++) {
+                                    if (VOWEL_REGEX.test(current[j])) { currentHasVowel = true; break; }
+                                }
+                                if (!currentHasVowel) syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
+                                else syllables.push(current);
+                            } else syllables.push(current);
+                        }
+                        return syllables.map(function (s) { return s.join(""); });
+                    },
+                    detectSilentLetters: function (word) {
+                        if (!word) return [];
+                        var silentIndexes = [];
+                        var lower = word.toLowerCase();
+                        for (var eIdx = 0; eIdx < SILENT_ENDINGS.length; eIdx++) {
+                            var end = SILENT_ENDINGS[eIdx];
+                            if (lower.length > end.length && lower.indexOf(end, lower.length - end.length) !== -1) {
+                                var startIndex = lower.length - end.length;
+                                for (var i = startIndex; i < lower.length; i++) {
+                                    if (silentIndexes.indexOf(i) === -1) silentIndexes.push(i);
+                                }
+                                break;
+                            }
+                        }
+                        return silentIndexes.sort(function (a, b) { return a - b; });
+                    },
+                    analyzeWord: function (word) {
+                        return { original: word, phonemes: this.segmentPhonemes(word), syllables: this.segmentSyllables(word), silentLetters: this.detectSilentLetters(word) };
+                    }
+                };
+
+                // Inline ColorizationEngine (no eval needed)
+                var ColorizationEngine = {
+                    palettes: {
+                        phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
+                        syllables: ["#D55E00", "#0072B2"],
+                        silent: "#999999",
+                        grammar: { 'NOM': '#D55E00', 'VER': '#0072B2', 'ADJ': '#56B4E9', 'ADV': '#009E73', 'PRO': '#E69F00', 'DET': '#CC79A7', 'PRE': '#000000', 'CON': '#999999', 'INT': '#F0E442' }
+                    },
+                    processModel: function (model, config) {
+                        var processedModel = JSON.parse(JSON.stringify(model));
+                        var wordMap = null;
+                        processedModel.paragraphs.forEach(function (para) {
+                            var newRuns = [];
+                            para.textRuns.forEach(function (run) {
+                                if (!run.text) return;
+                                var transformedRuns = ColorizationEngine.processRun(run, config, wordMap);
+                                newRuns.push.apply(newRuns, transformedRuns);
+                            });
+                            para.textRuns = newRuns;
+                        });
+                        return processedModel;
+                    },
+                    processRun: function (run, config, wordMap) {
+                        var originalText = run.text;
+                        var engine = LinguisticEngine;
+                        var newRuns = [];
+                        var addSegment = function (text, color, extraFormatting) {
+                            extraFormatting = extraFormatting || {};
+                            var formatting = {};
+                            for (var key in run.formatting) {
+                                formatting[key] = run.formatting[key];
+                            }
+                            formatting.color = color || run.formatting.color;
+                            for (var key in extraFormatting) {
+                                formatting[key] = extraFormatting[key];
+                            }
+                            newRuns.push({ text: text, formatting: formatting });
+                        };
+                        if (config.mode === 'grammar') {
+                            var words = originalText.split(/(\P{L}+)/u);
+                            words.forEach(function (token) {
+                                if (!token) return; // Skip undefined
+                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
+                                if (token === "") { addSegment(token, null); return; }
+                                var lowerWord = token.toLowerCase();
+                                var grammar = wordMap ? wordMap.get(lowerWord) : null;
+                                var color = null;
+                                if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
+                                addSegment(token, color);
+                            });
+                        } else if (config.mode === 'phonemes') {
+                            var words = originalText.split(/(\P{L}+)/u);
+                            words.forEach(function (token) {
+                                if (!token) return; // Skip undefined
+                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
+                                if (token === "") { addSegment(token, null); return; }
+                                try {
+                                    var analysis = engine.analyzeWord(token);
+                                    if (!analysis || !analysis.phonemes || analysis.phonemes.length === 0) {
+                                        addSegment(token, null);
+                                        return;
+                                    }
+                                    analysis.phonemes.forEach(function (p, idx) {
+                                        var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
+                                        var color = ColorizationEngine.palettes.phonemes[colorIndex];
+                                        addSegment(p, color);
+                                    });
+                                } catch (e) {
+                                    addSegment(token, null);
+                                }
+                            });
+                        } else if (config.mode === 'syllables') {
+                            var words = originalText.split(/(\P{L}+)/u);
+                            words.forEach(function (token) {
+                                if (!token) return; // Skip undefined
+                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
+                                if (token === "") { addSegment(token, null); return; }
+                                try {
+                                    var syllables = engine.segmentSyllables(token);
+                                    if (!syllables || syllables.length === 0) {
+                                        addSegment(token, null);
+                                        return;
+                                    }
+                                    syllables.forEach(function (s, idx) {
+                                        var color = ColorizationEngine.palettes.syllables[idx % 2];
+                                        addSegment(s, color);
+                                    });
+                                } catch (e) {
+                                    addSegment(token, null);
+                                }
+                            });
+                        } else if (config.mode === 'silent') {
+                            var words = originalText.split(/(\P{L}+)/u);
+                            words.forEach(function (token) {
+                                if (!token) return; // Skip undefined
+                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
+                                if (token === "") { addSegment(token, null); return; }
+                                var silentIndices = engine.detectSilentLetters(token);
+                                if (silentIndices.length === 0) { addSegment(token, null); }
+                                else {
+                                    var lastIdx = 0;
+                                    for (var i = 0; i < token.length; i++) {
+                                        if (silentIndices.indexOf(i) !== -1) {
+                                            if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
+                                            addSegment(token.charAt(i), ColorizationEngine.palettes.silent);
+                                            lastIdx = i + 1;
+                                        }
+                                    }
+                                    if (lastIdx < token.length) addSegment(token.substring(lastIdx), null);
+                                }
+                            });
+                        } else { addSegment(originalText, null); }
+                        return newRuns;
+                    },
+                    hashCode: function (str) {
+                        var hash = 0;
+                        for (var i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+                        return hash;
+                    }
+                };
 
                 var oDocument = Api.GetDocument();
+                if (!oDocument) {
+                    return "ERROR: Could not get document";
+                }
 
                 // RECURSIVE HELPER (Robust)
                 function collectAllParagraphs(container) {
@@ -481,7 +693,8 @@
                                     underline: oRun.GetUnderline(),
                                     strikeout: oRun.GetStrikeout(),
                                     fontFamily: oRun.GetFontFamily(),
-                                    fontSize: oRun.GetFontSize()
+                                    fontSize: oRun.GetFontSize(),
+                                    color: oRun.GetColor()
                                 }
                             });
                         }
@@ -489,22 +702,42 @@
 
                     var processedModel = ColorizationEngine.processModel({ paragraphs: [paraModel] }, Asc.scope.config);
 
+                    // Verify text is preserved
+                    var originalText = paraModel.textRuns.map(function (r) { return r.text || ''; }).join('');
+                    var processedText = processedModel.paragraphs[0].textRuns.map(function (r) { return r.text || ''; }).join('');
+
+                    if (originalText.toLowerCase().normalize("NFC") !== processedText.toLowerCase().normalize("NFC")) {
+                        // Text mismatch - skip this paragraph to preserve content
+                        continue;
+                    }
+
                     oElement.RemoveAllElements();
 
                     var pData = processedModel.paragraphs[0];
                     for (var rIdx = 0; rIdx < pData.textRuns.length; rIdx++) {
                         var runData = pData.textRuns[rIdx];
+
+                        // Skip empty runs
+                        if (!runData.text) continue;
+
                         var oRun = Api.CreateRun();
                         oRun.AddText(runData.text);
 
                         if (runData.formatting) {
                             var f = runData.formatting;
                             if (f.color) {
-                                oRun.SetColor(
-                                    parseInt(f.color.slice(1, 3), 16),
-                                    parseInt(f.color.slice(3, 5), 16),
-                                    parseInt(f.color.slice(5, 7), 16)
-                                );
+                                // Handle both hex string and RGB array
+                                if (typeof f.color === 'string' && f.color.charAt(0) === '#') {
+                                    // Hex string like "#FF0000"
+                                    oRun.SetColor(
+                                        parseInt(f.color.slice(1, 3), 16),
+                                        parseInt(f.color.slice(3, 5), 16),
+                                        parseInt(f.color.slice(5, 7), 16)
+                                    );
+                                } else if (Array.isArray(f.color) && f.color.length >= 3) {
+                                    // RGB array like [255, 0, 0]
+                                    oRun.SetColor(f.color[0], f.color[1], f.color[2]);
+                                }
                             }
                             if (f.bold) oRun.SetBold(true);
                             if (f.italic) oRun.SetItalic(true);
