@@ -300,11 +300,14 @@ button:hover {
     vertical-align: middle;
 }
 
-.red { background-color: #CC79A7; } /* Updated colors to match logic */
-.orange { background-color: #E69F00; }
-.purple { background-color: #CC79A7; } /* Homophone was reddish purple */
-.vermilion { background-color: #D55E00; }
-.blue { background-color: #0072B2; }
+.red { background-color: #A60628; } /* Dark Red (NOM / Syllable 1) */
+.orange { background-color: #AA3300; } /* Dark Orange (PRO / Phoneme 4) */
+.purple { background-color: #6D214F; } /* Dark Purple (DET / Vowels) */
+.vermilion { background-color: #A60628; } /* Dark Red (Alias) */
+.blue { background-color: #0047AB; } /* Dark Blue (VER / Alternation 2) */
+.green { background-color: #006B3C; } /* Dark Green (ADV) */
+.cyan { background-color: #006994; } /* Dark Cyan (ADJ) */
+.grey { background-color: #606060; } /* Dark Grey (Silent) */
 
 /* Font definitions */
 @font-face {

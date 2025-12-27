@@ -5,15 +5,18 @@
      * Linguistic Engine for OnlyDys
      * Handles text normalization, phoneme segmentation, syllable segmentation,
      * and silent letter detection for French.
+     * 
+     * Credits: Inspired and informed by the work of Marie-Pierre Brungard 
+     * and the LireCouleur project (http://lirecouleur.arkaline.fr).
      */
 
     const VOWELS = [
-        "a", "à", "â",
+        "a", "à", "â", "ä",
         "e", "é", "è", "ê", "ë",
         "i", "î", "ï",
-        "o", "ô",
+        "o", "ô", "ö",
         "u", "ù", "û", "ü",
-        "y",
+        "y", "ÿ",
         "œ", "æ"
     ];
 
@@ -21,10 +24,11 @@
 
     // Order matters — longest first
     const MULTI_PHONEMES = [
-        // Nasal vowels
-        "eau", "eaux",
+        // Nasal vowels / complex vowels
+        "eaux", "eau",
+        "aient", "oient", // verb endings
         "ain", "aim", "ein", "eim",
-        "ien",
+        "ien", "ian",
         "oin",
         "on", "om",
         "an", "am",
@@ -32,17 +36,17 @@
         "in", "im", "yn", "ym",
 
         // Vowel combinations
-        "ou", "oi", "ai", "ei", "au",
+        "ou", "oi", "ai", "ei", "au", "eu", "œu",
 
         // Consonant digraphs
         "ch", "ph", "th", "gn", "qu", "gu",
 
         // Special cases
-        "ill"
+        "ill", "ail", "eil", "ouil", "euil"
     ];
 
     const SILENT_ENDINGS = [
-        "ent", "es", "e", "s", "t", "d", "p", "x"
+        "ent", "es", "e", "s", "t", "d", "p", "x", "g", "z"
     ];
 
     const LinguisticEngine = {
@@ -72,7 +76,33 @@
          * @returns {boolean}
          */
         isConsonant: function (char) {
-            return !this.isVowel(char) && /[a-zàâçéèêëîïôùûüœæ]/i.test(char);
+            return !this.isVowel(char) && /[a-zàâäçéèêëîïôöùûüÿœæ]/i.test(char);
+        },
+
+        /**
+         * Determines the type of phoneme.
+         * @param {string} phoneme 
+         * @returns {'vowel' | 'consonant' | 'semi-consonant' | 'other'}
+         */
+        getPhonemeType: function (phoneme) {
+            if (!phoneme) return 'other';
+            const lower = phoneme.toLowerCase();
+
+            // If it's in the MULTI_PHONEMES list, we check its nature
+            if (["eau", "eaux", "aient", "oient", "ain", "aim", "ein", "eim", "ien", "ian", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "eu", "œu"].includes(lower)) {
+                return 'vowel';
+            }
+            if (["ch", "ph", "th", "gn", "qu", "gu"].includes(lower)) {
+                return 'consonant';
+            }
+            if (["ill", "ail", "eil", "ouil", "euil"].includes(lower)) {
+                return 'semi-consonant';
+            }
+
+            if (this.isVowel(phoneme)) return 'vowel';
+            if (this.isConsonant(phoneme)) return 'consonant';
+
+            return 'other';
         },
 
         /**
@@ -164,15 +194,18 @@
 
             for (let i = 0; i < phonemes.length; i++) {
                 current.push(phonemes[i]);
+                const type = this.getPhonemeType(phonemes[i]);
 
-                // If current phoneme contains a vowel (nucleus)
-                if (VOWEL_REGEX.test(phonemes[i])) {
+                // If current phoneme is a vowel (nucleus)
+                if (type === 'vowel') {
                     const next = phonemes[i + 1];
+                    const nextType = next ? this.getPhonemeType(next) : null;
                     const nextNext = phonemes[i + 2];
+                    const nextNextType = nextNext ? this.getPhonemeType(nextNext) : null;
 
-                    if (next && !VOWEL_REGEX.test(next)) {
+                    if (next && nextType !== 'vowel') {
                         // V + C
-                        if (nextNext && !VOWEL_REGEX.test(nextNext)) {
+                        if (nextNext && nextNextType !== 'vowel') {
                             // V + C + C -> V C | C
                             // Consume the first consonant into current syllable
                             current.push(next);
@@ -197,7 +230,7 @@
                 // Append remaining consonants to the last syllable if possible, or new if it was a mess
                 if (syllables.length > 0) {
                     // Check if 'current' has a vowel. If not, append to last syllable.
-                    const currentHasVowel = current.some(p => VOWEL_REGEX.test(p));
+                    const currentHasVowel = current.some(p => this.getPhonemeType(p) === 'vowel');
                     if (!currentHasVowel) {
                         // syllables elements are arrays of phonemes
                         syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
@@ -240,6 +273,107 @@
                 }
             }
             return silentIndexes.sort(function (a, b) { return a - b; });
+        },
+
+        /**
+         * Attempts to lemmatize a French word by removing common inflectional endings.
+         * @param {string} word - The inflected word
+         * @param {Map|null} wordMap - Optional dictionary map for validation
+         * @returns {string} The lemmatized form (or original if no match found)
+         */
+        lemmatize: function (word, wordMap) {
+            if (!word) return word;
+
+            const lower = word.toLowerCase();
+
+            // If exact match exists, return it
+            if (wordMap && wordMap.has(lower)) {
+                return lower;
+            }
+
+            // Common verb endings to try removing (ordered by specificity)
+            const verbEndings = [
+                // Present tense
+                'ons', 'ez', 'ent', 'es', 'e',
+                // Imperfect
+                'aient', 'ions', 'iez', 'ais', 'ait',
+                // Future
+                'eront', 'erez', 'erons', 'eras', 'era', 'erai',
+                'ront', 'rez', 'rons', 'ras', 'ra', 'rai',
+                // Conditional
+                'eraient', 'erions', 'eriez', 'erais', 'erait',
+                'raient', 'rions', 'riez', 'rais', 'rait',
+                // Past participle
+                'és', 'ées', 'ée', 'é',
+                'is', 'it', 'ies', 'ie',
+                'us', 'ue', 'ues', 'u',
+                // Infinitive variations
+                'ir', 'er', 're'
+            ];
+
+            // Adjective/noun agreement endings
+            const agreementEndings = [
+                'aux', 'eaux', 'eux',  // Plural special cases
+                'es', 's', 'x'          // Standard plural/feminine
+            ];
+
+            // Try verb lemmatization
+            for (const ending of verbEndings) {
+                if (lower.endsWith(ending) && lower.length > ending.length + 2) {
+                    const stem = lower.slice(0, -ending.length);
+
+                    // For -er verbs, try adding 'er' back
+                    if (['e', 'es', 'ent', 'ons', 'ez', 'ais', 'ait', 'ions', 'iez', 'aient'].includes(ending)) {
+                        const candidate = stem + 'er';
+                        if (!wordMap || wordMap.has(candidate)) {
+                            return candidate;
+                        }
+                    }
+
+                    // For -ir verbs, try adding 'ir' back
+                    if (['is', 'it', 'issons', 'issez', 'issent', 'issais', 'issait'].includes(ending)) {
+                        const candidate = stem + 'ir';
+                        if (!wordMap || wordMap.has(candidate)) {
+                            return candidate;
+                        }
+                    }
+
+                    // For -re verbs, try adding 're' back
+                    if (['s', 't', 'ons', 'ez', 'ent'].includes(ending) && !stem.endsWith('e')) {
+                        const candidate = stem + 're';
+                        if (!wordMap || wordMap.has(candidate)) {
+                            return candidate;
+                        }
+                    }
+
+                    // Try the stem itself
+                    if (!wordMap || wordMap.has(stem)) {
+                        return stem;
+                    }
+                }
+            }
+
+            // Try agreement lemmatization
+            for (const ending of agreementEndings) {
+                if (lower.endsWith(ending) && lower.length > ending.length + 2) {
+                    const stem = lower.slice(0, -ending.length);
+
+                    // Try stem directly
+                    if (!wordMap || wordMap.has(stem)) {
+                        return stem;
+                    }
+
+                    // For feminine forms ending in 'e', try removing it
+                    if (ending === 'es' || ending === 'e') {
+                        if (!wordMap || wordMap.has(stem)) {
+                            return stem;
+                        }
+                    }
+                }
+            }
+
+            // No lemmatization found, return original
+            return lower;
         },
 
         /**

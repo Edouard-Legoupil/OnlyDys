@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="resources/css/plugin_style.css">
 
     <script type="text/javascript" src="scripts/logger.js"></script>
-    <script type="text/javascript" src="scripts/code.js"></script>
-    <script type="text/javascript" src="scripts/ui.js"></script>
-    <script type="text/javascript" src="scripts/style.js"></script>
+    <script type="text/javascript" src="scripts/suggestionLogic.js"></script>
+    <script type="text/javascript" src="scripts/suggestionUI.js"></script>
+    <script type="text/javascript" src="scripts/styleManager.js"></script>
     <script type="text/javascript" src="scripts/dyslexia.js"></script>
     <script type="text/javascript" src="scripts/linguisticEngine.js"></script>
     <script type="text/javascript" src="scripts/colorizationEngine.js"></script>
@@ -71,37 +71,49 @@
             <div class="linguistics-container">
 
                 <div class="control-group">
-                    <label class="section-label">Mode d'aide à la lecture:</label>
-                    <div class="radio-group" id="ling-mode-radios">
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="none" checked> Aucun
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="grammar"> Catégories grammaticales
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="phonemes"> Phonèmes
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="syllables"> Syllabes
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="silent"> Lettres silencieuses
-                        </label>
-                        <!-- 
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="words"> Mots
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="ling-mode" value="lines"> Lignes
-                        </label> 
-                        -->
+                    <label class="section-label">Type d'aide :</label>
+                    <div id="ling-category-radios" class="radio-group"
+                        style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <label class="radio-label"><input type="radio" name="ling-category" value="none" checked>
+                            Aucun</label>
+                        <label class="radio-label"><input type="radio" name="ling-category" value="grammar">
+                            Grammaire</label>
+                        <label class="radio-label"><input type="radio" name="ling-category" value="linguistic">
+                            Linguistique</label>
+                        <label class="radio-label"><input type="radio" name="ling-category" value="alternance">
+                            Alternance</label>
+                        <label class="radio-label"><input type="radio" name="ling-category" value="highlight"> Mise en
+                            évidence</label>
+                    </div>
+                </div>
+
+                <div id="ling-mode-container" class="control-group" style="display: none; margin-top: 10px;">
+                    <label class="section-label">Mode spécifique :</label>
+                    <div id="ling-mode-radios" class="radio-group">
+                        <!-- Populated via JS -->
                     </div>
                 </div>
 
                 <div id="ling-options"
                     style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; min-height: 20px;">
+
+                    <!-- Global Colorization Options -->
+                    <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee;">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="opt-highlighting">
+                            <label for="opt-highlighting">Utiliser le surlignage (fond coloré)</label>
+                        </div>
+                    </div>
+
                     <!-- Conditional Options -->
+                    <div id="opt-container-letters" class="conditional-opt" style="display:none;">
+                        <div class="input-group">
+                            <label for="ling-target-letters" style="font-size: 0.9em;">Lettres à mettre en évidence
+                                :</label>
+                            <input type="text" id="ling-target-letters" value="bdpq" class="form-control"
+                                style="width: 100%; margin-top: 5px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                        </div>
+                    </div>
                     <div id="opt-container-syllables" class="conditional-opt" style="display:none;">
                         <div class="checkbox-group">
                             <input type="checkbox" id="opt-arcs">
@@ -149,7 +161,8 @@
                 <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">Applique la police
                     OpenDyslexic et un espacement adapté.</p>
 
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;" <h3>Simuler la dyslexie</h3>
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+                <h3>Simuler la dyslexie</h3>
 
 
                 <div class="toggle-switch-container" style="margin-bottom: 20px;">
@@ -231,6 +244,7 @@
                     Vous utilisez la version 0.1.0 et pouvez <a
                         href="https://github.com/Edouard-Legoupil/OnlyDys/issues/new" target="_blank">signaler ici un
                         problème</a></p>
+
 
                 <div style="margin-top: 20px; text-align: center;">
                     <button id="btn-download-logs"

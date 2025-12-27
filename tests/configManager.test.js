@@ -8,24 +8,34 @@ describe('ConfigManager', function () {
         setItem: (key, val) => store[key] = val
     };
 
+    beforeEach(function () {
+        for (const key in store) delete store[key];
+        window.ConfigManager.config = {
+            mode: 'syllables',
+            showArcs: false,
+            highlightSilent: false
+        };
+    });
+
     before(function () {
         Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
 
         // Mock DOM elements required by ConfigManager
-        const ids = ['ling-mode', 'opt-arcs', 'opt-silent', 'btn-apply-ling', 'btn-reset-ling', 'ling-preview', 'ling-status'];
+        const ids = ['opt-arcs', 'opt-silent', 'btn-apply-ling', 'btn-reset-ling', 'ling-preview', 'ling-status'];
+
+        // Create radio buttons for ling-mode
+        ['none', 'phonemes', 'syllables', 'words', 'lines', 'silent'].forEach(val => {
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'ling-mode';
+            input.value = val;
+            input.id = 'ling-mode-' + val;
+            document.body.appendChild(input);
+        });
+
         ids.forEach(id => {
             let el;
-            if (id === 'ling-mode') {
-                el = document.createElement('select');
-                el.id = id;
-                // Add options
-                ['none', 'phonemes', 'syllables', 'words', 'lines', 'silent'].forEach(val => {
-                    const opt = document.createElement('option');
-                    opt.value = val;
-                    el.appendChild(opt);
-                });
-                el.value = 'phonemes'; // Pre-set for test logic? Default is syllables in code.
-            } else if (id.startsWith('opt-')) {
+            if (id.startsWith('opt-')) {
                 el = document.createElement('input');
                 el.type = 'checkbox';
                 el.id = id;
@@ -51,11 +61,12 @@ describe('ConfigManager', function () {
     after(function () {
         Object.defineProperty(window, 'localStorage', { value: originalLocalStorage });
         // Cleanup DOM
-        const ids = ['ling-mode', 'opt-arcs', 'opt-silent', 'btn-apply-ling', 'btn-reset-ling', 'ling-preview', 'ling-status'];
+        const ids = ['opt-arcs', 'opt-silent', 'btn-apply-ling', 'btn-reset-ling', 'ling-preview', 'ling-status'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.remove();
         });
+        document.querySelectorAll('input[name="ling-mode"]').forEach(el => el.remove());
     });
 
     it('should initialize with default config', function () {
@@ -66,6 +77,9 @@ describe('ConfigManager', function () {
         manager.init();
         expect(manager).to.exist;
         expect(manager.config.mode).to.equal('syllables');
+
+        const radio = document.getElementById('ling-mode-syllables');
+        expect(radio.checked).to.be.true;
     });
 
     it('should update preview when initialized', function () {

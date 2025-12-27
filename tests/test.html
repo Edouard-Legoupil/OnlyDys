@@ -17,22 +17,111 @@
     </script>
     <script src="mock-dictionary.js"></script>
     <script src="../scripts/logger.js"></script>
-    <script src="../scripts/code.js"></script>
+    <script src="../scripts/suggestionLogic.js"></script>
     <script src="../scripts/linguisticEngine.js"></script>
     <script src="../scripts/colorizationEngine.js"></script>
     <script src="../scripts/arcRenderer.js"></script>
     <script src="../scripts/selectionManager.js"></script>
     <script src="../scripts/configManager.js"></script>
-    <script src="../scripts/image.js"></script>
+    <script src="../scripts/pictogramService.js"></script>
+    <script src="../data/dictionary_full.js"></script>
 
     <!-- Test Scripts -->
-    <script src="code.test.js"></script>
-    <script src="test.image.js"></script>
+    <script src="suggestionLogic.test.js"></script>
+    <script src="pictogramService.test.js"></script>
     <script src="linguisticEngine.test.js"></script>
     <script src="colorizationEngine.test.js"></script>
+    <script src="arcRenderer.test.js"></script>
     <script src="configManager.test.js"></script>
+    <div id="visual-tests"
+        style="margin: 20px; padding: 20px; border: 1px solid #ccc; background: #f9f9f9; font-family: sans-serif;">
+        <h2>Visual Verification</h2>
+        <div id="visual-container"></div>
+    </div>
+
     <script>
-        mocha.run();
+        async function renderVisualTests() {
+            const container = document.getElementById('visual-container');
+            if (!container) return;
+
+            const edgeCases = [
+                "L'oiseau chante sur la branche (Cool!).",
+                "Enfant, Fin, Maison, Pomme, SYLLABES.",
+                "bdpq vs qpdb (123) $#%",
+                "   " // Empty/whitespace
+            ];
+
+            const categories = {
+                'grammar': 'Grammaire (Full Dictionary)',
+                'phonemes': 'Phonèmes (Nature)',
+                'alternphonemes': 'Phonèmes (Alternés)',
+                'syllables': 'Syllabes',
+                'syllables-arcs': 'Syllabes (avec Arcs)',
+                'silent': 'Lettres silencieuses',
+                'alternlettres': 'Lettres (Alternées)',
+                'alternmots': 'Mots (Alternés)',
+                'vowels': 'Voyelles',
+                'consonants': 'Consonnes',
+                'letters': 'Lettres spécifiques (bdpq)'
+            };
+
+            // Build wordMap from full dictionary/mock
+            const wordMap = new Map();
+            const dictToUse = window.OnlyDysDictionary || window.mockDictionary || [];
+
+            if (dictToUse.length === 0) {
+                container.innerHTML = '<div style="color:red">Erreur: Aucun dictionnaire chargé.</div>';
+            } else {
+                dictToUse.forEach(entry => wordMap.set(entry.w.toLowerCase(), entry.g));
+                container.innerHTML = '';
+            }
+
+            for (const mode in categories) {
+                const section = document.createElement('div');
+                section.style.marginBottom = '20px';
+                section.innerHTML = `<h3>${categories[mode]}</h3>`;
+
+                edgeCases.forEach(text => {
+                    const row = document.createElement('div');
+                    row.style.marginBottom = '5px';
+                    row.style.padding = '5px';
+                    row.style.borderLeft = '4px solid #ddd';
+
+                    const result = window.ColorizationEngine.processRun(
+                        { text: text, formatting: { color: "#000" } },
+                        {
+                            mode: mode.startsWith('syllables') ? 'syllables' : mode,
+                            options: {
+                                targetLetters: "bdpq",
+                                showArcs: (mode === 'syllables-arcs')
+                            }
+                        },
+                        wordMap
+                    );
+
+                    result.forEach(run => {
+                        const span = document.createElement('span');
+                        span.textContent = run.text;
+                        if (run.formatting && run.formatting.color) {
+                            span.style.color = run.formatting.color;
+                        }
+                        if (run.formatting && run.formatting.showArc) {
+                            span.style.borderBottom = `2px solid ${run.formatting.color || '#000'}`;
+                            span.style.borderRadius = "0 0 10px 10px";
+                            span.style.paddingBottom = "2px";
+                            span.style.display = "inline-block";
+                        }
+                        row.appendChild(span);
+                    });
+                    section.appendChild(row);
+                });
+                container.appendChild(section);
+            }
+        }
+
+        mocha.run().on('end', () => {
+            renderVisualTests();
+        });
     </script>
 </body>
 

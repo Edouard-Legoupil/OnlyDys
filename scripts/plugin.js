@@ -76,42 +76,27 @@
     }
 
     const LINGUISTIC_ENGINE_SOURCE = `
-    var VOWELS = [
-        "a", "à", "â",
-        "e", "é", "è", "ê", "ë",
-        "i", "î", "ï",
-        "o", "ô",
-        "u", "ù", "û", "ü",
-        "y",
-        "œ", "æ"
-    ];
-
+    var VOWELS = ["a", "à", "â", "ä", "e", "é", "è", "ê", "ë", "i", "î", "ï", "o", "ô", "ö", "u", "ù", "û", "ü", "y", "ÿ", "œ", "æ"];
     var VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
-
-    var MULTI_PHONEMES = [
-        "eau", "eaux",
-        "ain", "aim", "ein", "eim",
-        "ien",
-        "oin",
-        "on", "om",
-        "an", "am",
-        "en", "em",
-        "in", "im", "yn", "ym",
-        "ou", "oi", "ai", "ei", "au",
-        "ch", "ph", "th", "gn", "qu", "gu",
-        "ill"
-    ];
-
-    var SILENT_ENDINGS = [
-        "ent", "es", "e", "s", "t", "d", "p", "x"
-    ];
+    var MULTI_PHONEMES = ["eaux", "eau", "aient", "oient", "ain", "aim", "ein", "eim", "ien", "ian", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "eu", "œu", "ch", "ph", "th", "gn", "qu", "gu", "ill", "ail", "eil", "ouil", "euil"];
+    var SILENT_ENDINGS = ["ent", "es", "e", "s", "t", "d", "p", "x", "g", "z"];
 
     var LinguisticEngine = {
         normalizeFrench: function (text) { if (!text) return ""; return text.toLowerCase().normalize("NFC"); },
         isVowel: function (char) { return VOWELS.indexOf(char.toLowerCase()) !== -1; },
-        isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâçéèêëîïôùûüœæ]/i.test(char); },
+        isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâäçéèêëîïôöùûüÿœæ]/i.test(char); },
         isPunctuation: function (char) { return /\\p{P}/u.test(char); },
         tokenizeWords: function (text) { return text.match(/\\p{L}+[''-]?\\p{L}*/gu) || []; },
+        getPhonemeType: function (phoneme) {
+            if (!phoneme) return 'other';
+            var lower = phoneme.toLowerCase();
+            if (["eau", "eaux", "aient", "oient", "ain", "aim", "ein", "eim", "ien", "ian", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "eu", "œu"].indexOf(lower) !== -1) return 'vowel';
+            if (["ch", "ph", "th", "gn", "qu", "gu"].indexOf(lower) !== -1) return 'consonant';
+            if (["ill", "ail", "eil", "ouil", "euil"].indexOf(lower) !== -1) return 'semi-consonant';
+            if (this.isVowel(phoneme)) return 'vowel';
+            if (this.isConsonant(phoneme)) return 'consonant';
+            return 'other';
+        },
         segmentPhonemes: function (word) {
             var normalizedWord = this.normalizeFrench(word);
             var phonemes = [];
@@ -142,11 +127,14 @@
             var current = [];
             for (var i = 0; i < phonemes.length; i++) {
                 current.push(phonemes[i]);
-                if (VOWEL_REGEX.test(phonemes[i])) {
+                var type = this.getPhonemeType(phonemes[i]);
+                if (type === 'vowel') {
                     var next = phonemes[i + 1];
+                    var nextType = next ? this.getPhonemeType(next) : null;
                     var nextNext = phonemes[i + 2];
-                    if (next && !VOWEL_REGEX.test(next)) {
-                        if (nextNext && !VOWEL_REGEX.test(nextNext)) { current.push(next); i++; syllables.push(current); current = []; }
+                    var nextNextType = nextNext ? this.getPhonemeType(nextNext) : null;
+                    if (next && nextType !== 'vowel') {
+                        if (nextNext && nextNextType !== 'vowel') { current.push(next); i++; syllables.push(current); current = []; }
                         else { syllables.push(current); current = []; }
                     } else { syllables.push(current); current = []; }
                 }
@@ -155,7 +143,7 @@
                 if (syllables.length > 0) {
                     var currentHasVowel = false;
                     for (var j = 0; j < current.length; j++) {
-                        if (VOWEL_REGEX.test(current[j])) { currentHasVowel = true; break; }
+                        if (this.getPhonemeType(current[j]) === 'vowel') { currentHasVowel = true; break; }
                     }
                     if (!currentHasVowel) syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
                     else syllables.push(current);
@@ -189,9 +177,10 @@
         palettes: {
             phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
             syllables: ["#D55E00", "#0072B2"],
-            words: ["#000000", "#555555"],
+            words: ["#000000", "#0072B2"],
             lines: ["#000000", "#0072B2"],
-            vowels: "#D55E00", consonants: "#0072B2", silent: "#999999", punctuation: "#CC79A7",
+            vowels: "#CC79A7", consonants: "#0072B2", silent: "#999999", punctuation: "#CC79A7",
+            letters: ["#E69F00", "#56B4E9", "#009E73", "#F0E442"],
             grammar: { 'NOM': '#D55E00', 'VER': '#0072B2', 'ADJ': '#56B4E9', 'ADV': '#009E73', 'PRO': '#E69F00', 'DET': '#CC79A7', 'PRE': '#000000', 'CON': '#999999', 'INT': '#F0E442' }
         },
         processModel: function (model, config) {
@@ -215,18 +204,15 @@
             var addSegment = function(text, color, extraFormatting) {
                 extraFormatting = extraFormatting || {};
                 var formatting = {};
-                for (var key in run.formatting) {
-                    formatting[key] = run.formatting[key];
-                }
-                formatting.color = color || run.formatting.color;
-                for (var key in extraFormatting) {
-                    formatting[key] = extraFormatting[key];
-                }
+                for (var key in run.formatting) { formatting[key] = run.formatting[key]; }
+                formatting.color = (color === undefined) ? run.formatting.color : color;
+                for (var key in extraFormatting) { formatting[key] = extraFormatting[key]; }
                 newRuns.push({ text: text, formatting: formatting });
             };
             if (config.mode === 'grammar') {
                 var words = originalText.split(/(\\P{L}+)/u);
                 words.forEach(function(token) {
+                    if (!token) return;
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
                     var lowerWord = token.toLowerCase();
                     var grammar = wordMap ? wordMap.get(lowerWord) : null;
@@ -234,30 +220,87 @@
                     if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
                     addSegment(token, color);
                 });
-            } else if (config.mode === 'phonemes') {
+            } else if (config.mode === 'phonemes' || config.mode === 'alternphonemes') {
                 var words = originalText.split(/(\\P{L}+)/u);
+                var phonemeCount = 0;
                 words.forEach(function(token) {
+                    if (!token) return;
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    var analysis = engine.analyzeWord(token);
-                    analysis.phonemes.forEach(function(p, idx) {
-                        var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
-                        var color = ColorizationEngine.palettes.phonemes[colorIndex];
-                        addSegment(p, color);
-                    });
+                    try {
+                        var analysis = engine.analyzeWord(token);
+                        if (!analysis || !analysis.phonemes) { addSegment(token, null); return; }
+                        analysis.phonemes.forEach(function(p, idx) {
+                            var color;
+                            if (config.mode === 'alternphonemes') {
+                                color = ColorizationEngine.palettes.phonemes[phonemeCount % ColorizationEngine.palettes.phonemes.length];
+                                phonemeCount++;
+                            } else {
+                                var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
+                                color = ColorizationEngine.palettes.phonemes[colorIndex];
+                            }
+                            addSegment(p, color);
+                        });
+                    } catch (e) { addSegment(token, null); }
                 });
             } else if (config.mode === 'syllables') {
                 var words = originalText.split(/(\\P{L}+)/u);
                 words.forEach(function(token) {
+                    if (!token) return;
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    var syllables = engine.segmentSyllables(token);
-                    syllables.forEach(function(s, idx) {
-                        var color = ColorizationEngine.palettes.syllables[idx % 2];
-                        addSegment(s, color);
-                    });
+                    try {
+                        var syllables = engine.segmentSyllables(token);
+                        if (!syllables) { addSegment(token, null); return; }
+                        syllables.forEach(function(s, idx) {
+                            var color = ColorizationEngine.palettes.syllables[idx % ColorizationEngine.palettes.syllables.length];
+                            addSegment(s, color);
+                        });
+                    } catch (e) { addSegment(token, null); }
                 });
+            } else if (config.mode === 'alternlettres') {
+                var letterCount = 0;
+                for (var i = 0; i < originalText.length; i++) {
+                    var char = originalText.charAt(i);
+                    if (engine.isPunctuation(char) || /^\\s$/.test(char)) { addSegment(char, null); }
+                    else {
+                        var color = ColorizationEngine.palettes.letters[letterCount % ColorizationEngine.palettes.letters.length];
+                        addSegment(char, color);
+                        letterCount++;
+                    }
+                }
+            } else if (config.mode === 'alternmots') {
+                var words = originalText.split(/(\\s+)/u);
+                var wordIdx = 0;
+                words.forEach(function(token) {
+                    if (/^\\s+$/.test(token) || token === "") { addSegment(token, null); }
+                    else {
+                        var color = ColorizationEngine.palettes.words[wordIdx % ColorizationEngine.palettes.words.length];
+                        addSegment(token, color);
+                        wordIdx++;
+                    }
+                });
+            } else if (config.mode === 'vowels' || config.mode === 'consonants') {
+                for (var i = 0; i < originalText.length; i++) {
+                    var char = originalText.charAt(i);
+                    var color = null;
+                    if (config.mode === 'vowels' && engine.isVowel(char)) color = ColorizationEngine.palettes.vowels;
+                    else if (config.mode === 'consonants' && engine.isConsonant(char)) color = ColorizationEngine.palettes.consonants;
+                    addSegment(char, color);
+                }
+            } else if (config.mode === 'letters' && config.options && config.options.targetLetters) {
+                var targets = config.options.targetLetters.toLowerCase();
+                for (var i = 0; i < originalText.length; i++) {
+                    var char = originalText.charAt(i);
+                    var color = null;
+                    if (targets.indexOf(char.toLowerCase()) !== -1) {
+                        var tIdx = targets.indexOf(char.toLowerCase());
+                        color = ColorizationEngine.palettes.phonemes[tIdx % ColorizationEngine.palettes.phonemes.length];
+                    }
+                    addSegment(char, color);
+                }
             } else if (config.mode === 'silent') {
                 var words = originalText.split(/(\\P{L}+)/u);
                 words.forEach(function(token) {
+                    if (!token) return;
                     if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
                     var silentIndices = engine.detectSilentLetters(token);
                     if (silentIndices.length === 0) { addSegment(token, null); }
@@ -283,7 +326,10 @@
         }
     };`;
 
+    let lastActionWasColorization = false;
+
     function initLinguisticsTab() {
+        initDyslexiaTab();
         const styleToggle = document.getElementById('toggle-global-style');
         const styleStatus = document.getElementById('global-style-status');
 
@@ -301,18 +347,78 @@
             });
         }
 
-        if (window.OnlyDysStyles && window.OnlyDysStyles.displayColorLegend) {
-            window.OnlyDysStyles.displayColorLegend();
-        }
+        const categoryRadios = document.getElementsByName('ling-category');
+        const modeRadiosContainer = document.getElementById('ling-mode-radios');
+        const modeContainer = document.getElementById('ling-mode-container');
 
-        const modeRadios = document.getElementsByName('ling-mode');
-        modeRadios.forEach(radio => {
+        const modesByCategory = {
+            'standard': [
+                { val: 'grammar', label: 'Grammaire' }
+            ],
+            'linguistic': [
+                { val: 'phonemes', label: 'Phonèmes (Nature)' },
+                { val: 'syllables', label: 'Syllabes' },
+                { val: 'silent', label: 'Lettres silencieuses' }
+            ],
+            'alternance': [
+                { val: 'alternphonemes', label: 'Phonèmes (Alternés)' },
+                { val: 'alternlettres', label: 'Lettres (Alternées)' },
+                { val: 'alternmots', label: 'Mots (Alternés)' },
+                { val: 'alternlines', label: 'Lignes (Alternées)' }
+            ],
+            'highlight': [
+                { val: 'vowels', label: 'Voyelles' },
+                { val: 'consonants', label: 'Consonnes' },
+                { val: 'letters', label: 'Lettres spécifiques' }
+            ]
+        };
+
+        categoryRadios.forEach(radio => {
             radio.addEventListener('change', function () {
-                applyLinguisticsToDocument();
-                updateInterfaceVisibility();
-                updateLingPreview(); // Trigger preview update
+                const category = this.value;
+                populateModes(category);
+                if (category === 'none') {
+                    applyLinguisticsToDocument(); // Will trigger Undo
+                }
             });
         });
+
+        function populateModes(category) {
+            if (!modeRadiosContainer) return;
+            modeRadiosContainer.innerHTML = '';
+
+            if (category === 'none' || !modesByCategory[category]) {
+                if (modeContainer) modeContainer.style.display = 'none';
+                updateInterfaceVisibility();
+                updateLingPreview();
+                return;
+            }
+
+            if (modeContainer) modeContainer.style.display = 'block';
+            modesByCategory[category].forEach((m, idx) => {
+                const label = document.createElement('label');
+                label.className = 'radio-label';
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'ling-mode';
+                input.value = m.val;
+                if (idx === 0) input.checked = true;
+
+                input.addEventListener('change', function () {
+                    applyLinguisticsToDocument();
+                    updateInterfaceVisibility();
+                    updateLingPreview();
+                });
+
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(' ' + m.label));
+                modeRadiosContainer.appendChild(label);
+            });
+
+            applyLinguisticsToDocument();
+            updateInterfaceVisibility();
+            updateLingPreview();
+        }
 
         document.getElementById('opt-arcs')?.addEventListener('change', function () {
             applyLinguisticsToDocument();
@@ -322,17 +428,29 @@
             applyLinguisticsToDocument();
             updateLingPreview();
         });
+        document.getElementById('ling-target-letters')?.addEventListener('input', function () {
+            applyLinguisticsToDocument();
+            updateLingPreview();
+        });
 
         function updateInterfaceVisibility() {
-            const mode = Array.from(modeRadios).find(r => r.checked)?.value;
+            const mode = document.querySelector('input[name="ling-mode"]:checked')?.value;
             document.querySelectorAll('.conditional-opt').forEach(el => el.style.display = 'none');
 
             if (mode === 'syllables') document.getElementById('opt-container-syllables').style.display = 'block';
             if (mode === 'silent') document.getElementById('opt-container-silent').style.display = 'block';
             if (mode === 'grammar') document.getElementById('opt-container-grammar').style.display = 'block';
+            if (mode === 'letters') document.getElementById('opt-container-letters').style.display = 'block';
         }
-        updateInterfaceVisibility();
-        updateLingPreview(); // Initial preview
+
+        // Final init
+        const initialCategory = Array.from(categoryRadios).find(r => r.checked)?.value || 'none';
+        if (initialCategory !== 'none') {
+            populateModes(initialCategory);
+        } else {
+            updateInterfaceVisibility();
+            updateLingPreview();
+        }
     }
 
     // New Function: Update the visual preview in the tab
@@ -343,7 +461,8 @@
         const mode = document.querySelector('input[name="ling-mode"]:checked')?.value || 'none';
         const options = {
             showArcs: document.getElementById('opt-arcs')?.checked || false,
-            highlightSilent: document.getElementById('opt-silent')?.checked || false
+            highlightSilent: document.getElementById('opt-silent')?.checked || false,
+            useHighlighting: document.getElementById('opt-highlighting')?.checked || false
         };
         const config = { mode: mode, options: options };
 
@@ -389,384 +508,502 @@
 
     function applyLinguisticsToDocument() {
         if (isApplying) return;
+
+        const categoryRadios = document.getElementsByName('ling-category');
+        const category = Array.from(categoryRadios).find(r => r.checked)?.value || 'none';
+        const mode = (category === 'none') ? 'none' : (document.querySelector('input[name="ling-mode"]:checked')?.value || 'none');
+
+        if (mode === 'none') {
+            const finishRevert = () => {
+                isApplying = false;
+                const statusDiv = document.getElementById('ling-status');
+                if (statusDiv) statusDiv.textContent = "Colorisation retirée.";
+                updateLingPreview();
+            };
+            if (lastActionWasColorization) {
+                if (window.logger) window.logger.info("Removing colorization via Undo...");
+                window.Asc.plugin.executeMethod("Undo", [], function () {
+                    lastActionWasColorization = false;
+                    finishRevert();
+                });
+            } else {
+                finishRevert();
+            }
+            return;
+        }
+
         isApplying = true;
         const statusDiv = document.getElementById('ling-status');
         if (statusDiv) statusDiv.textContent = "Application en cours...";
 
-        const mode = document.querySelector('input[name="ling-mode"]:checked')?.value || 'none';
-        const options = {
-            showArcs: document.getElementById('opt-arcs')?.checked || false,
-            highlightSilent: document.getElementById('opt-silent')?.checked || false
+        const applyAction = () => {
+            const options = {
+                showArcs: document.getElementById('opt-arcs')?.checked || false,
+                highlightSilent: document.getElementById('opt-silent')?.checked || false,
+                targetLetters: document.getElementById('ling-target-letters')?.value || 'bdpq',
+                useHighlighting: document.getElementById('opt-highlighting')?.checked || false
+            };
+
+            const config = { mode: mode, options: options };
+            Asc.scope.colorizationScript = COLORIZATION_ENGINE_SOURCE;
+            Asc.scope.config = config;
+
+            window.Asc.plugin.callCommand(function () {
+                try {
+                    if (typeof Api === 'undefined') {
+                        return "ERROR: Api is not defined";
+                    }
+
+                    // Inline LinguisticEngine (no eval needed)
+                    var VOWELS = ["a", "à", "â", "e", "é", "è", "ê", "ë", "i", "î", "ï", "o", "ô", "u", "ù", "û", "ü", "y", "œ", "æ"];
+                    var VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
+                    var MULTI_PHONEMES = ["eau", "eaux", "ain", "aim", "ein", "eim", "ien", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "ch", "ph", "th", "gn", "qu", "gu", "ill"];
+                    var SILENT_ENDINGS = ["ent", "es", "e", "s", "t", "d", "p", "x"];
+
+                    var LinguisticEngine = {
+                        normalizeFrench: function (text) { if (!text) return ""; return text.toLowerCase().normalize("NFC"); },
+                        isVowel: function (char) { return VOWELS.indexOf(char.toLowerCase()) !== -1; },
+                        isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâäçéèêëîïôöùûüÿœæ]/i.test(char); },
+                        getPhonemeType: function (phoneme) {
+                            if (!phoneme) return 'other';
+                            var lower = phoneme.toLowerCase();
+                            if (["eau", "eaux", "aient", "oient", "ain", "aim", "ein", "eim", "ien", "ian", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "eu", "œu"].indexOf(lower) !== -1) return 'vowel';
+                            if (["ch", "ph", "th", "gn", "qu", "gu"].indexOf(lower) !== -1) return 'consonant';
+                            if (["ill", "ail", "eil", "ouil", "euil"].indexOf(lower) !== -1) return 'semi-consonant';
+                            if (this.isVowel(phoneme)) return 'vowel';
+                            if (this.isConsonant(phoneme)) return 'consonant';
+                            return 'other';
+                        },
+                        isPunctuation: function (char) { return /\p{P}/u.test(char); },
+                        segmentPhonemes: function (word) {
+                            var normalizedWord = this.normalizeFrench(word);
+                            var phonemes = [];
+                            var i = 0;
+                            while (i < normalizedWord.length) {
+                                var matched = false;
+                                for (var pIdx = 0; pIdx < MULTI_PHONEMES.length; pIdx++) {
+                                    var p = MULTI_PHONEMES[pIdx];
+                                    if (normalizedWord.indexOf(p, i) === i) {
+                                        var isNasalCandidate = (p.charAt(p.length - 1) === "n" || p.charAt(p.length - 1) === "m") && p.length <= 4 && p !== "gn";
+                                        if (isNasalCandidate) {
+                                            var nextChar = normalizedWord.charAt(i + p.length);
+                                            if (nextChar) {
+                                                if (this.isVowel(nextChar)) continue;
+                                                if (nextChar === 'n' || nextChar === 'm') continue;
+                                            }
+                                        }
+                                        phonemes.push(p); i += p.length; matched = true; break;
+                                    }
+                                }
+                                if (!matched) { phonemes.push(normalizedWord.charAt(i)); i++; }
+                            }
+                            return phonemes;
+                        },
+                        segmentSyllables: function (word) {
+                            var phonemes = this.segmentPhonemes(word);
+                            var syllables = [];
+                            var current = [];
+                            for (var i = 0; i < phonemes.length; i++) {
+                                current.push(phonemes[i]);
+                                var type = this.getPhonemeType(phonemes[i]);
+                                if (type === 'vowel') {
+                                    var next = phonemes[i + 1];
+                                    var nextType = next ? this.getPhonemeType(next) : null;
+                                    var nextNext = phonemes[i + 2];
+                                    var nextNextType = nextNext ? this.getPhonemeType(nextNext) : null;
+                                    if (next && nextType !== 'vowel') {
+                                        if (nextNext && nextNextType !== 'vowel') { current.push(next); i++; syllables.push(current); current = []; }
+                                        else { syllables.push(current); current = []; }
+                                    } else { syllables.push(current); current = []; }
+                                }
+                            }
+                            if (current.length) {
+                                if (syllables.length > 0) {
+                                    var currentHasVowel = false;
+                                    for (var j = 0; j < current.length; j++) {
+                                        if (this.getPhonemeType(current[j]) === 'vowel') { currentHasVowel = true; break; }
+                                    }
+                                    if (!currentHasVowel) syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
+                                    else syllables.push(current);
+                                } else syllables.push(current);
+                            }
+                            return syllables.map(function (s) { return s.join(""); });
+                        },
+                        detectSilentLetters: function (word) {
+                            if (!word) return [];
+                            var silentIndexes = [];
+                            var lower = word.toLowerCase();
+                            for (var eIdx = 0; eIdx < SILENT_ENDINGS.length; eIdx++) {
+                                var end = SILENT_ENDINGS[eIdx];
+                                if (lower.length > end.length && lower.indexOf(end, lower.length - end.length) !== -1) {
+                                    var startIndex = lower.length - end.length;
+                                    for (var i = startIndex; i < lower.length; i++) {
+                                        if (silentIndexes.indexOf(i) === -1) silentIndexes.push(i);
+                                    }
+                                    break;
+                                }
+                            }
+                            return silentIndexes.sort(function (a, b) { return a - b; });
+                        },
+                        lemmatize: function (word, wordMap) {
+                            if (!word) return word;
+                            var lower = word.toLowerCase();
+                            if (wordMap && wordMap.has(lower)) return lower;
+                            var verbEndings = ['ons', 'ez', 'ent', 'es', 'e', 'aient', 'ions', 'iez', 'ais', 'ait', 'eront', 'erez', 'erons', 'eras', 'era', 'erai', 'ront', 'rez', 'rons', 'ras', 'ra', 'rai', 'eraient', 'erions', 'eriez', 'erais', 'erait', 'raient', 'rions', 'riez', 'rais', 'rait', 'és', 'ées', 'ée', 'é', 'is', 'it', 'ies', 'ie', 'us', 'ue', 'ues', 'u', 'ir', 'er', 're'];
+                            var agreementEndings = ['aux', 'eaux', 'eux', 'es', 's', 'x'];
+                            for (var i = 0; i < verbEndings.length; i++) {
+                                var ending = verbEndings[i];
+                                if (lower.endsWith(ending) && lower.length > ending.length + 2) {
+                                    var stem = lower.slice(0, -ending.length);
+                                    if (['e', 'es', 'ent', 'ons', 'ez', 'ais', 'ait', 'ions', 'iez', 'aient'].indexOf(ending) !== -1) {
+                                        var candidate = stem + 'er';
+                                        if (!wordMap || wordMap.has(candidate)) return candidate;
+                                    }
+                                    if (['is', 'it', 'issons', 'issez', 'issent', 'issais', 'issait'].indexOf(ending) !== -1) {
+                                        var candidate = stem + 'ir';
+                                        if (!wordMap || wordMap.has(candidate)) return candidate;
+                                    }
+                                    if (['s', 't', 'ons', 'ez', 'ent'].indexOf(ending) !== -1 && !stem.endsWith('e')) {
+                                        var candidate = stem + 're';
+                                        if (!wordMap || wordMap.has(candidate)) return candidate;
+                                    }
+                                    if (!wordMap || wordMap.has(stem)) return stem;
+                                }
+                            }
+                            for (var i = 0; i < agreementEndings.length; i++) {
+                                var ending = agreementEndings[i];
+                                if (lower.endsWith(ending) && lower.length > ending.length + 2) {
+                                    var stem = lower.slice(0, -ending.length);
+                                    if (!wordMap || wordMap.has(stem)) return stem;
+                                }
+                            }
+                            return lower;
+                        },
+                        analyzeWord: function (word) {
+                            return { original: word, phonemes: this.segmentPhonemes(word), syllables: this.segmentSyllables(word), silentLetters: this.detectSilentLetters(word) };
+                        }
+                    };
+
+                    // Inline ColorizationEngine (no eval needed)
+                    var ColorizationEngine = {
+                        palettes: {
+                            phonemes: ["#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994", "#663300", "#8B008B", "#000000"],
+                            syllables: ["#A60628", "#0047AB"],
+                            words: ["#000000", "#0047AB"],
+                            lines: ["#000000", "#0047AB"],
+                            vowels: "#6D214F", consonants: "#0047AB", silent: "#606060", punctuation: "#6D214F",
+                            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
+                            grammar: {
+                                'NOM': '#A60628', 'VER': '#0047AB', 'ADJ': '#006994', 'ADV': '#006B3C',
+                                'PRO': '#AA3300', 'DET': '#6D214F', 'PRE': '#000000', 'CON': '#663300', 'INT': '#8B008B'
+                            }
+                        },
+                        processModel: function (model, config) {
+                            var processedModel = JSON.parse(JSON.stringify(model));
+                            var wordMap = null;
+                            processedModel.paragraphs.forEach(function (para) {
+                                var newRuns = [];
+                                para.textRuns.forEach(function (run) {
+                                    if (!run.text) return;
+                                    var transformedRuns = ColorizationEngine.processRun(run, config, wordMap);
+                                    newRuns.push.apply(newRuns, transformedRuns);
+                                });
+                                para.textRuns = newRuns;
+                            });
+                            return processedModel;
+                        },
+                        processRun: function (run, config, wordMap) {
+                            var originalText = run.text;
+                            var engine = LinguisticEngine;
+                            var newRuns = [];
+                            var addSegment = function (text, color, extraFormatting) {
+                                extraFormatting = extraFormatting || {};
+                                var formatting = {};
+                                for (var key in run.formatting) { formatting[key] = run.formatting[key]; }
+                                formatting.color = (color === undefined) ? run.formatting.color : color;
+                                for (var key in extraFormatting) { formatting[key] = extraFormatting[key]; }
+                                newRuns.push({ text: text, formatting: formatting });
+                            };
+                            if (config.mode === 'grammar') {
+                                var words = originalText.split(/(\P{L}+)/u);
+                                words.forEach(function (token) {
+                                    if (!token) return;
+                                    if (engine.isPunctuation(token) || /^\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                                    var lowerWord = token.toLowerCase();
+                                    var grammar = wordMap ? wordMap.get(lowerWord) : null;
+                                    if (!grammar && wordMap && engine.lemmatize) {
+                                        var lemma = engine.lemmatize(lowerWord, wordMap);
+                                        grammar = wordMap.get(lemma);
+                                    }
+                                    var color = null;
+                                    if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
+                                    addSegment(token, color);
+                                });
+                            } else if (config.mode === 'phonemes' || config.mode === 'alternphonemes') {
+                                var words = originalText.split(/(\P{L}+)/u);
+                                var phonemeCount = 0;
+                                words.forEach(function (token) {
+                                    if (!token) return;
+                                    if (engine.isPunctuation(token) || /^\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                                    try {
+                                        var analysis = engine.analyzeWord(token);
+                                        if (!analysis || !analysis.phonemes) { addSegment(token, null); return; }
+                                        analysis.phonemes.forEach(function (p, idx) {
+                                            var color;
+                                            if (config.mode === 'alternphonemes') {
+                                                color = ColorizationEngine.palettes.phonemes[phonemeCount % ColorizationEngine.palettes.phonemes.length];
+                                                phonemeCount++;
+                                            } else {
+                                                var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
+                                                color = ColorizationEngine.palettes.phonemes[colorIndex];
+                                            }
+                                            addSegment(p, color);
+                                        });
+                                    } catch (e) { addSegment(token, null); }
+                                });
+                            } else if (config.mode === 'syllables') {
+                                var words = originalText.split(/(\P{L}+)/u);
+                                words.forEach(function (token) {
+                                    if (!token) return;
+                                    if (engine.isPunctuation(token) || /^\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                                    try {
+                                        var syllables = engine.segmentSyllables(token);
+                                        if (!syllables) { addSegment(token, null); return; }
+                                        syllables.forEach(function (s, idx) {
+                                            var color = ColorizationEngine.palettes.syllables[idx % ColorizationEngine.palettes.syllables.length];
+                                            var extra = (config.options && config.options.showArcs) ? { showArc: true } : {};
+                                            addSegment(s, color, extra);
+                                        });
+                                    } catch (e) { addSegment(token, null); }
+                                });
+                            } else if (config.mode === 'alternlettres') {
+                                var letterCount = 0;
+                                for (var i = 0; i < originalText.length; i++) {
+                                    var char = originalText.charAt(i);
+                                    if (engine.isPunctuation(char) || /^\s$/.test(char)) { addSegment(char, null); }
+                                    else {
+                                        var color = ColorizationEngine.palettes.letters[letterCount % ColorizationEngine.palettes.letters.length];
+                                        addSegment(char, color);
+                                        letterCount++;
+                                    }
+                                }
+                            } else if (config.mode === 'alternmots') {
+                                var words = originalText.split(/(\s+)/u);
+                                var wordIdx = 0;
+                                words.forEach(function (token) {
+                                    if (/^\s+$/.test(token) || token === "") { addSegment(token, null); }
+                                    else {
+                                        var color = ColorizationEngine.palettes.words[wordIdx % ColorizationEngine.palettes.words.length];
+                                        addSegment(token, color);
+                                        wordIdx++;
+                                    }
+                                });
+                            } else if (config.mode === 'vowels' || config.mode === 'consonants') {
+                                for (var i = 0; i < originalText.length; i++) {
+                                    var char = originalText.charAt(i);
+                                    var color = null;
+                                    if (config.mode === 'vowels' && engine.isVowel(char)) color = ColorizationEngine.palettes.vowels;
+                                    else if (config.mode === 'consonants' && engine.isConsonant(char)) color = ColorizationEngine.palettes.consonants;
+                                    addSegment(char, color);
+                                }
+                            } else if (config.mode === 'letters' && config.options && config.options.targetLetters) {
+                                var targets = config.options.targetLetters.toLowerCase();
+                                for (var i = 0; i < originalText.length; i++) {
+                                    var char = originalText.charAt(i);
+                                    var color = null;
+                                    if (targets.indexOf(char.toLowerCase()) !== -1) {
+                                        var tIdx = targets.indexOf(char.toLowerCase());
+                                        color = ColorizationEngine.palettes.phonemes[tIdx % ColorizationEngine.palettes.phonemes.length];
+                                    }
+                                    addSegment(char, color);
+                                }
+                            } else if (config.mode === 'silent') {
+                                var words = originalText.split(/(\P{L}+)/u);
+                                words.forEach(function (token) {
+                                    if (!token) return;
+                                    if (engine.isPunctuation(token) || /^\s+$/.test(token) || token === "") { addSegment(token, null); return; }
+                                    var silentIndices = engine.detectSilentLetters(token);
+                                    if (silentIndices.length === 0) { addSegment(token, null); }
+                                    else {
+                                        var lastIdx = 0;
+                                        for (var i = 0; i < token.length; i++) {
+                                            if (silentIndices.indexOf(i) !== -1) {
+                                                if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
+                                                addSegment(token.charAt(i), ColorizationEngine.palettes.silent);
+                                                lastIdx = i + 1;
+                                            }
+                                        }
+                                        if (lastIdx < token.length) addSegment(token.substring(lastIdx), null);
+                                    }
+                                });
+                            } else { addSegment(originalText, null); }
+                            return newRuns;
+                        },
+                        hashCode: function (str) {
+                            var hash = 0;
+                            for (var i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+                            return hash;
+                        }
+                    };
+
+                    var oDocument = Api.GetDocument();
+                    if (!oDocument) return "ERROR: No document";
+
+                    var tStart = Date.now();
+                    var allParagraphs = oDocument.GetAllParagraphs();
+                    var totalParas = allParagraphs.length;
+                    var changedParas = 0;
+                    var skippedLinks = 0;
+
+                    // UNDO LOGIC: Clear all previous colorization
+                    for (var i = 0; i < allParagraphs.length; i++) {
+                        var oPara = allParagraphs[i];
+
+                        // Clear paragraph shading (for line alternation)
+                        oPara.SetShd("clear", 255, 255, 255);
+
+                        var elementsCount = oPara.GetElementsCount();
+                        for (var k = 0; k < elementsCount; k++) {
+                            var oEl = oPara.GetElement(k);
+                            if (!oEl) continue;
+                            var type = oEl.GetClassType();
+
+                            if (type === "run") {
+                                // Reset text color to black
+                                oEl.SetColor(0, 0, 0);
+                                // Clear run shading (for highlighting mode)
+                                oEl.SetShd("clear", 255, 255, 255);
+                            }
+                        }
+                    }
+
+                    // Check if mode is alternlines
+                    var isAlternLines = Asc.scope.config.mode === 'alternlines';
+                    var lineColors = ["#FFFACD", "#E0F0FF"]; // Light Yellow, Light Blue
+
+                    for (var i = 0; i < allParagraphs.length; i++) {
+                        var oPara = allParagraphs[i];
+                        var elementsCount = oPara.GetElementsCount();
+                        var newElements = [];
+                        var hasChange = false;
+
+                        // Apply line alternation background if in alternlines mode
+                        if (isAlternLines) {
+                            var lineIndex = i % lineColors.length;
+                            var bgColor = lineColors[lineIndex];
+                            var rgb = [
+                                parseInt(bgColor.slice(1, 3), 16),
+                                parseInt(bgColor.slice(3, 5), 16),
+                                parseInt(bgColor.slice(5, 7), 16)
+                            ];
+                            oPara.SetShd("clear", rgb[0], rgb[1], rgb[2]);
+                            hasChange = true;
+                            continue; // Skip run processing for alternlines mode
+                        }
+
+                        for (var k = 0; k < elementsCount; k++) {
+                            var oEl = oPara.GetElement(k);
+                            if (!oEl) continue;
+                            var type = oEl.GetClassType();
+
+                            if (type === "run") {
+                                var runModel = {
+                                    text: oEl.GetText(),
+                                    formatting: {
+                                        bold: oEl.GetBold(),
+                                        italic: oEl.GetItalic(),
+                                        underline: oEl.GetUnderline(),
+                                        strikeout: oEl.GetStrikeout(),
+                                        fontFamily: oEl.GetFontFamily(),
+                                        fontSize: oEl.GetFontSize(),
+                                        color: oEl.GetColor()
+                                    }
+                                };
+
+                                var processedRuns = ColorizationEngine.processRun(runModel, Asc.scope.config);
+                                if (processedRuns.length > 1 || (processedRuns.length === 1 && processedRuns[0].formatting.color !== runModel.formatting.color)) {
+                                    hasChange = true;
+                                    processedRuns.forEach(function (rData) {
+                                        if (!rData.text) return;
+                                        var oNewRun = Api.CreateRun();
+                                        oNewRun.AddText(rData.text);
+                                        var f = rData.formatting;
+
+                                        // Handle text color
+                                        if (f.color) {
+                                            if (typeof f.color === 'string' && f.color.charAt(0) === '#') {
+                                                oNewRun.SetColor(parseInt(f.color.slice(1, 3), 16), parseInt(f.color.slice(3, 5), 16), parseInt(f.color.slice(5, 7), 16));
+                                            } else if (Array.isArray(f.color)) {
+                                                oNewRun.SetColor(f.color[0], f.color[1], f.color[2]);
+                                            }
+                                        }
+
+                                        // Handle background color (highlighting mode)
+                                        if (f.backgroundColor) {
+                                            if (typeof f.backgroundColor === 'string' && f.backgroundColor.charAt(0) === '#') {
+                                                var bgR = parseInt(f.backgroundColor.slice(1, 3), 16);
+                                                var bgG = parseInt(f.backgroundColor.slice(3, 5), 16);
+                                                var bgB = parseInt(f.backgroundColor.slice(5, 7), 16);
+                                                oNewRun.SetShd("clear", bgR, bgG, bgB);
+                                            }
+                                        }
+
+                                        if (f.bold) oNewRun.SetBold(true);
+                                        if (f.italic) oNewRun.SetItalic(true);
+                                        if (f.underline) oNewRun.SetUnderline(f.underline);
+                                        if (f.strikeout) oNewRun.SetStrikeout(true);
+                                        if (f.fontFamily) oNewRun.SetFontFamily(f.fontFamily);
+                                        if (f.fontSize) oNewRun.SetFontSize(f.fontSize);
+                                        newElements.push(oNewRun);
+                                    });
+                                } else {
+                                    newElements.push(oEl);
+                                }
+                            } else {
+                                if (type === "hyperlink") skippedLinks++;
+                                newElements.push(oEl);
+                            }
+                        }
+
+                        if (hasChange) {
+                            oPara.RemoveAllElements();
+                            for (var n = 0; n < newElements.length; n++) {
+                                oPara.AddElement(newElements[n]);
+                            }
+                            changedParas++;
+                        }
+                    }
+                    var tEnd = Date.now();
+                    return "SUCCESS: Processed " + totalParas + " paras, changed " + changedParas + ", skipped " + skippedLinks + " links in " + (tEnd - tStart) + "ms";
+                } catch (err) {
+                    return "ERROR: " + err.toString();
+                }
+
+            }, false, true, function (result) {
+                isApplying = false;
+                var statusDiv = document.getElementById('ling-status');
+                if (statusDiv) {
+                    if (result && result.startsWith && result.startsWith("ERROR")) {
+                        statusDiv.textContent = "Erreur: " + result;
+                        statusDiv.style.color = "red";
+                        if (window.logger) window.logger.error(result);
+                    } else {
+                        lastActionWasColorization = true;
+                        statusDiv.textContent = "Mise à jour terminée (" + (new Date()).toLocaleTimeString() + ")";
+                    }
+                }
+            });
         };
 
-        const config = { mode: mode, options: options };
-
-        Asc.scope.linguisticScript = LINGUISTIC_ENGINE_SOURCE;
-        Asc.scope.colorizationScript = COLORIZATION_ENGINE_SOURCE;
-        Asc.scope.config = config;
-
-        window.Asc.plugin.callCommand(function () {
-            try {
-                if (typeof Api === 'undefined') {
-                    return "ERROR: Api is not defined";
-                }
-
-                // Inline LinguisticEngine (no eval needed)
-                var VOWELS = ["a", "à", "â", "e", "é", "è", "ê", "ë", "i", "î", "ï", "o", "ô", "u", "ù", "û", "ü", "y", "œ", "æ"];
-                var VOWEL_REGEX = new RegExp(VOWELS.join("|"), "i");
-                var MULTI_PHONEMES = ["eau", "eaux", "ain", "aim", "ein", "eim", "ien", "oin", "on", "om", "an", "am", "en", "em", "in", "im", "yn", "ym", "ou", "oi", "ai", "ei", "au", "ch", "ph", "th", "gn", "qu", "gu", "ill"];
-                var SILENT_ENDINGS = ["ent", "es", "e", "s", "t", "d", "p", "x"];
-
-                var LinguisticEngine = {
-                    normalizeFrench: function (text) { if (!text) return ""; return text.toLowerCase().normalize("NFC"); },
-                    isVowel: function (char) { return VOWELS.indexOf(char.toLowerCase()) !== -1; },
-                    isConsonant: function (char) { return !this.isVowel(char) && /[a-zàâçéèêëîïôùûüœæ]/i.test(char); },
-                    isPunctuation: function (char) { return /\p{P}/u.test(char); },
-                    segmentPhonemes: function (word) {
-                        var normalizedWord = this.normalizeFrench(word);
-                        var phonemes = [];
-                        var i = 0;
-                        while (i < normalizedWord.length) {
-                            var matched = false;
-                            for (var pIdx = 0; pIdx < MULTI_PHONEMES.length; pIdx++) {
-                                var p = MULTI_PHONEMES[pIdx];
-                                if (normalizedWord.indexOf(p, i) === i) {
-                                    var isNasalCandidate = (p.charAt(p.length - 1) === "n" || p.charAt(p.length - 1) === "m") && p.length <= 4 && p !== "gn";
-                                    if (isNasalCandidate) {
-                                        var nextChar = normalizedWord.charAt(i + p.length);
-                                        if (nextChar) {
-                                            if (this.isVowel(nextChar)) continue;
-                                            if (nextChar === 'n' || nextChar === 'm') continue;
-                                        }
-                                    }
-                                    phonemes.push(p); i += p.length; matched = true; break;
-                                }
-                            }
-                            if (!matched) { phonemes.push(normalizedWord.charAt(i)); i++; }
-                        }
-                        return phonemes;
-                    },
-                    segmentSyllables: function (word) {
-                        var phonemes = this.segmentPhonemes(word);
-                        var syllables = [];
-                        var current = [];
-                        for (var i = 0; i < phonemes.length; i++) {
-                            current.push(phonemes[i]);
-                            if (VOWEL_REGEX.test(phonemes[i])) {
-                                var next = phonemes[i + 1];
-                                var nextNext = phonemes[i + 2];
-                                if (next && !VOWEL_REGEX.test(next)) {
-                                    if (nextNext && !VOWEL_REGEX.test(nextNext)) { current.push(next); i++; syllables.push(current); current = []; }
-                                    else { syllables.push(current); current = []; }
-                                } else { syllables.push(current); current = []; }
-                            }
-                        }
-                        if (current.length) {
-                            if (syllables.length > 0) {
-                                var currentHasVowel = false;
-                                for (var j = 0; j < current.length; j++) {
-                                    if (VOWEL_REGEX.test(current[j])) { currentHasVowel = true; break; }
-                                }
-                                if (!currentHasVowel) syllables[syllables.length - 1] = syllables[syllables.length - 1].concat(current);
-                                else syllables.push(current);
-                            } else syllables.push(current);
-                        }
-                        return syllables.map(function (s) { return s.join(""); });
-                    },
-                    detectSilentLetters: function (word) {
-                        if (!word) return [];
-                        var silentIndexes = [];
-                        var lower = word.toLowerCase();
-                        for (var eIdx = 0; eIdx < SILENT_ENDINGS.length; eIdx++) {
-                            var end = SILENT_ENDINGS[eIdx];
-                            if (lower.length > end.length && lower.indexOf(end, lower.length - end.length) !== -1) {
-                                var startIndex = lower.length - end.length;
-                                for (var i = startIndex; i < lower.length; i++) {
-                                    if (silentIndexes.indexOf(i) === -1) silentIndexes.push(i);
-                                }
-                                break;
-                            }
-                        }
-                        return silentIndexes.sort(function (a, b) { return a - b; });
-                    },
-                    analyzeWord: function (word) {
-                        return { original: word, phonemes: this.segmentPhonemes(word), syllables: this.segmentSyllables(word), silentLetters: this.detectSilentLetters(word) };
-                    }
-                };
-
-                // Inline ColorizationEngine (no eval needed)
-                var ColorizationEngine = {
-                    palettes: {
-                        phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
-                        syllables: ["#D55E00", "#0072B2"],
-                        silent: "#999999",
-                        grammar: { 'NOM': '#D55E00', 'VER': '#0072B2', 'ADJ': '#56B4E9', 'ADV': '#009E73', 'PRO': '#E69F00', 'DET': '#CC79A7', 'PRE': '#000000', 'CON': '#999999', 'INT': '#F0E442' }
-                    },
-                    processModel: function (model, config) {
-                        var processedModel = JSON.parse(JSON.stringify(model));
-                        var wordMap = null;
-                        processedModel.paragraphs.forEach(function (para) {
-                            var newRuns = [];
-                            para.textRuns.forEach(function (run) {
-                                if (!run.text) return;
-                                var transformedRuns = ColorizationEngine.processRun(run, config, wordMap);
-                                newRuns.push.apply(newRuns, transformedRuns);
-                            });
-                            para.textRuns = newRuns;
-                        });
-                        return processedModel;
-                    },
-                    processRun: function (run, config, wordMap) {
-                        var originalText = run.text;
-                        var engine = LinguisticEngine;
-                        var newRuns = [];
-                        var addSegment = function (text, color, extraFormatting) {
-                            extraFormatting = extraFormatting || {};
-                            var formatting = {};
-                            for (var key in run.formatting) {
-                                formatting[key] = run.formatting[key];
-                            }
-                            formatting.color = color || run.formatting.color;
-                            for (var key in extraFormatting) {
-                                formatting[key] = extraFormatting[key];
-                            }
-                            newRuns.push({ text: text, formatting: formatting });
-                        };
-                        if (config.mode === 'grammar') {
-                            var words = originalText.split(/(\P{L}+)/u);
-                            words.forEach(function (token) {
-                                if (!token) return; // Skip undefined
-                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
-                                if (token === "") { addSegment(token, null); return; }
-                                var lowerWord = token.toLowerCase();
-                                var grammar = wordMap ? wordMap.get(lowerWord) : null;
-                                var color = null;
-                                if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
-                                addSegment(token, color);
-                            });
-                        } else if (config.mode === 'phonemes') {
-                            var words = originalText.split(/(\P{L}+)/u);
-                            words.forEach(function (token) {
-                                if (!token) return; // Skip undefined
-                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
-                                if (token === "") { addSegment(token, null); return; }
-                                try {
-                                    var analysis = engine.analyzeWord(token);
-                                    if (!analysis || !analysis.phonemes || analysis.phonemes.length === 0) {
-                                        addSegment(token, null);
-                                        return;
-                                    }
-                                    analysis.phonemes.forEach(function (p, idx) {
-                                        var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
-                                        var color = ColorizationEngine.palettes.phonemes[colorIndex];
-                                        addSegment(p, color);
-                                    });
-                                } catch (e) {
-                                    addSegment(token, null);
-                                }
-                            });
-                        } else if (config.mode === 'syllables') {
-                            var words = originalText.split(/(\P{L}+)/u);
-                            words.forEach(function (token) {
-                                if (!token) return; // Skip undefined
-                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
-                                if (token === "") { addSegment(token, null); return; }
-                                try {
-                                    var syllables = engine.segmentSyllables(token);
-                                    if (!syllables || syllables.length === 0) {
-                                        addSegment(token, null);
-                                        return;
-                                    }
-                                    syllables.forEach(function (s, idx) {
-                                        var color = ColorizationEngine.palettes.syllables[idx % 2];
-                                        addSegment(s, color);
-                                    });
-                                } catch (e) {
-                                    addSegment(token, null);
-                                }
-                            });
-                        } else if (config.mode === 'silent') {
-                            var words = originalText.split(/(\P{L}+)/u);
-                            words.forEach(function (token) {
-                                if (!token) return; // Skip undefined
-                                if (engine.isPunctuation(token) || /^\s+$/.test(token)) { addSegment(token, null); return; }
-                                if (token === "") { addSegment(token, null); return; }
-                                var silentIndices = engine.detectSilentLetters(token);
-                                if (silentIndices.length === 0) { addSegment(token, null); }
-                                else {
-                                    var lastIdx = 0;
-                                    for (var i = 0; i < token.length; i++) {
-                                        if (silentIndices.indexOf(i) !== -1) {
-                                            if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
-                                            addSegment(token.charAt(i), ColorizationEngine.palettes.silent);
-                                            lastIdx = i + 1;
-                                        }
-                                    }
-                                    if (lastIdx < token.length) addSegment(token.substring(lastIdx), null);
-                                }
-                            });
-                        } else { addSegment(originalText, null); }
-                        return newRuns;
-                    },
-                    hashCode: function (str) {
-                        var hash = 0;
-                        for (var i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
-                        return hash;
-                    }
-                };
-
-                var oDocument = Api.GetDocument();
-                if (!oDocument) {
-                    return "ERROR: Could not get document";
-                }
-
-                // RECURSIVE HELPER (Robust)
-                function collectAllParagraphs(container) {
-                    var paragraphs = [];
-                    // Check if container is valid path
-                    if (!container) return [];
-
-                    var count = 0;
-                    // Safety check for GetElementsCount
-                    try {
-                        if (typeof container.GetElementsCount === "function") {
-                            count = container.GetElementsCount();
-                        }
-                    } catch (e) { return []; }
-
-                    for (var i = 0; i < count; i++) {
-                        var el = container.GetElement(i);
-                        if (!el) continue;
-                        var type = el.GetClassType();
-
-                        if (type === "paragraph") {
-                            paragraphs.push(el);
-                        } else if (type === "table") {
-                            var rowCount = el.GetRowsCount();
-                            for (var r = 0; r < rowCount; r++) {
-                                var row = el.GetRow(r);
-                                var cellCount = row.GetCellsCount();
-                                for (var c = 0; c < cellCount; c++) {
-                                    var cell = row.GetCell(c);
-                                    paragraphs = paragraphs.concat(collectAllParagraphs(cell));
-                                }
-                            }
-                        } else if (type === "contentControl") {
-                            if (typeof el.GetContent === "function") {
-                                paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
-                            }
-                        } else if (type === "group") {
-                            if (typeof el.GetContent === "function") {
-                                paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
-                            }
-                        }
-                    }
-                    return paragraphs;
-                }
-
-                var allParagraphs = collectAllParagraphs(oDocument);
-
-                for (var i = 0; i < allParagraphs.length; i++) {
-                    var oElement = allParagraphs[i];
-
-                    // Revert logic
-                    if (Asc.scope.config.mode === 'none') {
-                        var rCount = oElement.GetElementsCount();
-                        for (var k = 0; k < rCount; k++) {
-                            var r = oElement.GetElement(k);
-                            if (r.GetClassType() === "run") r.SetColor(0, 0, 0, false);
-                        }
-                        continue;
-                    }
-
-                    var runsCount = oElement.GetElementsCount();
-                    var paraModel = { textRuns: [] };
-
-                    for (var k = 0; k < runsCount; k++) {
-                        var oRun = oElement.GetElement(k);
-                        if (oRun.GetClassType() === "run") {
-                            paraModel.textRuns.push({
-                                text: oRun.GetText(),
-                                formatting: {
-                                    bold: oRun.GetBold(),
-                                    italic: oRun.GetItalic(),
-                                    underline: oRun.GetUnderline(),
-                                    strikeout: oRun.GetStrikeout(),
-                                    fontFamily: oRun.GetFontFamily(),
-                                    fontSize: oRun.GetFontSize(),
-                                    color: oRun.GetColor()
-                                }
-                            });
-                        }
-                    }
-
-                    var processedModel = ColorizationEngine.processModel({ paragraphs: [paraModel] }, Asc.scope.config);
-
-                    // Verify text is preserved
-                    var originalText = paraModel.textRuns.map(function (r) { return r.text || ''; }).join('');
-                    var processedText = processedModel.paragraphs[0].textRuns.map(function (r) { return r.text || ''; }).join('');
-
-                    if (originalText.toLowerCase().normalize("NFC") !== processedText.toLowerCase().normalize("NFC")) {
-                        // Text mismatch - skip this paragraph to preserve content
-                        continue;
-                    }
-
-                    oElement.RemoveAllElements();
-
-                    var pData = processedModel.paragraphs[0];
-                    for (var rIdx = 0; rIdx < pData.textRuns.length; rIdx++) {
-                        var runData = pData.textRuns[rIdx];
-
-                        // Skip empty runs
-                        if (!runData.text) continue;
-
-                        var oRun = Api.CreateRun();
-                        oRun.AddText(runData.text);
-
-                        if (runData.formatting) {
-                            var f = runData.formatting;
-                            if (f.color) {
-                                // Handle both hex string and RGB array
-                                if (typeof f.color === 'string' && f.color.charAt(0) === '#') {
-                                    // Hex string like "#FF0000"
-                                    oRun.SetColor(
-                                        parseInt(f.color.slice(1, 3), 16),
-                                        parseInt(f.color.slice(3, 5), 16),
-                                        parseInt(f.color.slice(5, 7), 16)
-                                    );
-                                } else if (Array.isArray(f.color) && f.color.length >= 3) {
-                                    // RGB array like [255, 0, 0]
-                                    oRun.SetColor(f.color[0], f.color[1], f.color[2]);
-                                }
-                            }
-                            if (f.bold) oRun.SetBold(true);
-                            if (f.italic) oRun.SetItalic(true);
-                            if (f.underline) oRun.SetUnderline(f.underline);
-                            if (f.strikeout) oRun.SetStrikeout(true);
-                            if (f.fontFamily) oRun.SetFontFamily(f.fontFamily);
-                            if (f.fontSize) oRun.SetFontSize(f.fontSize);
-                        }
-                        oElement.AddElement(oRun);
-                    }
-                }
-            } catch (err) {
-                return "ERROR: " + err.toString();
-            }
-
-        }, false, true, function (result) {
-            isApplying = false;
-            var statusDiv = document.getElementById('ling-status');
-            if (statusDiv) {
-                if (result && result.startsWith && result.startsWith("ERROR")) {
-                    statusDiv.textContent = "Erreur: " + result;
-                    statusDiv.style.color = "red";
-                    if (window.logger) window.logger.error(result);
-                } else {
-                    statusDiv.textContent = "Mise à jour terminée (" + (new Date()).toLocaleTimeString() + ")";
-                    statusDiv.style.color = "#666";
-                }
-            }
-        });
+        if (lastActionWasColorization) {
+            if (window.logger) window.logger.info("Reverting previous colorization via Undo before new apply...");
+            window.Asc.plugin.executeMethod("Undo", [], function () {
+                lastActionWasColorization = false;
+                applyAction();
+            });
+        } else {
+            applyAction();
+        }
     }
 
     function initSuggestionsTab() {
@@ -898,216 +1135,44 @@
 
         const dyslexiaToggle = document.getElementById('toggle-dyslexia-sim');
         const dyslexiaStatus = document.getElementById('dyslexia-sim-status');
-        let originalDocumentModel = null;
 
         if (dyslexiaToggle) {
             dyslexiaToggle.addEventListener('change', function (e) {
-                if (e.target.checked) {
-                    window.Asc.plugin.callCommand(function () {
-                        try {
-                            var oDocument = Api.GetDocument();
-
-                            function collectAllParagraphs(container) {
-                                var paragraphs = [];
-                                if (!container) return [];
-                                var count = 0;
-                                try {
-                                    if (typeof container.GetElementsCount === "function") count = container.GetElementsCount();
-                                } catch (e) { return []; }
-
-                                for (var i = 0; i < count; i++) {
-                                    var el = container.GetElement(i);
-                                    if (!el) continue;
-                                    var type = el.GetClassType();
-
-                                    if (type === "paragraph") {
-                                        paragraphs.push(el);
-                                    } else if (type === "table") {
-                                        var rowCount = el.GetRowsCount();
-                                        for (var r = 0; r < rowCount; r++) {
-                                            var row = el.GetRow(r);
-                                            var cellCount = row.GetCellsCount();
-                                            for (var c = 0; c < cellCount; c++) {
-                                                var cell = row.GetCell(c);
-                                                paragraphs = paragraphs.concat(collectAllParagraphs(cell));
-                                            }
-                                        }
-                                    } else if (type === "contentControl") {
-                                        if (typeof el.GetContent === "function") {
-                                            paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
-                                        }
-                                    } else if (type === "group") {
-                                        if (typeof el.GetContent === "function") {
-                                            paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
-                                        }
-                                    }
-                                }
-                                return paragraphs;
-                            }
-
-                            var allParagraphs = collectAllParagraphs(oDocument);
-                            Asc.scope.originalDocumentModel = [];
-
-                            function scrambleText(text) {
-                                var words = text.split(" ");
-                                for (var i = 0; i < words.length; i++) {
-                                    if (words[i].length > 4) {
-                                        var middle = words[i].slice(1, -1);
-                                        var scrambledMiddle = middle.split('').sort(function () { return 0.5 - Math.random() }).join('');
-                                        words[i] = words[i][0] + scrambledMiddle + words[i][words[i].length - 1];
-                                    }
-                                }
-                                return words.join(" ");
-                            }
-
-                            for (var i = 0; i < allParagraphs.length; i++) {
-                                var oParagraph = allParagraphs[i];
-                                var runsCount = oParagraph.GetElementsCount();
-                                var paraModel = { textRuns: [] };
-                                var originalParaModel = { textRuns: [] };
-
-                                for (var j = 0; j < runsCount; j++) {
-                                    var oRun = oParagraph.GetElement(j);
-                                    if (oRun.GetClassType() === "run") {
-                                        var originalText = oRun.GetText();
-                                        var runFormatting = {
-                                            bold: oRun.GetBold(),
-                                            italic: oRun.GetItalic(),
-                                            underline: oRun.GetUnderline(),
-                                            strikeout: oRun.GetStrikeout(),
-                                            fontFamily: oRun.GetFontFamily(),
-                                            fontSize: oRun.GetFontSize(),
-                                            color: oRun.GetColor()
-                                        };
-                                        paraModel.textRuns.push({
-                                            text: scrambleText(originalText),
-                                            formatting: runFormatting
-                                        });
-                                        originalParaModel.textRuns.push({
-                                            text: originalText,
-                                            formatting: runFormatting
-                                        });
-                                    }
-                                }
-                                Asc.scope.originalDocumentModel.push(originalParaModel);
-
-                                oParagraph.RemoveAllElements();
-                                for (var k = 0; k < paraModel.textRuns.length; k++) {
-                                    var runData = paraModel.textRuns[k];
-                                    var oNewRun = Api.CreateRun();
-                                    oNewRun.AddText(runData.text);
-
-                                    if (runData.formatting) {
-                                        var f = runData.formatting;
-                                        if (f.color) {
-                                            oNewRun.SetColor(f.color[0], f.color[1], f.color[2]);
-                                        }
-                                        if (f.bold) oNewRun.SetBold(true);
-                                        if (f.italic) oNewRun.SetItalic(true);
-                                        if (f.underline) oNewRun.SetUnderline(f.underline);
-                                        if (f.strikeout) oNewRun.SetStrikeout(true);
-                                        if (f.fontFamily) oNewRun.SetFontFamily(f.fontFamily);
-                                        if (f.fontSize) oNewRun.SetFontSize(f.fontSize);
-                                    }
-                                    oParagraph.AddElement(oNewRun);
-                                }
-                            }
-                        } catch (err) {
-                            return "ERROR: " + err.toString();
+                try {
+                    if (e.target.checked) {
+                        if (window.logger) window.logger.info("Activating dyslexia simulation...");
+                        // Apply the dyslexia effect (atomic command supporting Undo)
+                        if (window.OnlyDysDyslexia && window.OnlyDysDyslexia.applyDyslexiaToDocument) {
+                            window.OnlyDysDyslexia.applyDyslexiaToDocument({
+                                minWordLength: 5,
+                                scrambleChance: 100
+                            });
+                        } else {
+                            throw new Error("window.OnlyDysDyslexia or applyDyslexiaToDocument is not defined");
                         }
-                    }, false, true, function (result) {
+
                         if (dyslexiaStatus) {
-                            if (result && result.startsWith && result.startsWith("ERROR")) {
-                                dyslexiaStatus.textContent = "Erreur: " + result;
-                                dyslexiaStatus.style.color = "red";
-                            } else {
-                                dyslexiaStatus.textContent = "Actif";
-                                dyslexiaStatus.style.color = "green";
-                            }
+                            dyslexiaStatus.textContent = "Actif";
+                            dyslexiaStatus.style.color = "green";
                         }
-                    });
-                } else {
-                    window.Asc.plugin.callCommand(function () {
-                        try {
-                            var oDocument = Api.GetDocument();
+                    } else {
+                        if (window.logger) window.logger.info("Deactivating dyslexia simulation (Undo)...");
+                        // Revert using native Undo for precise restoration
+                        window.Asc.plugin.executeMethod("Undo");
 
-                            function collectAllParagraphs(container) {
-                                var paragraphs = [];
-                                if (!container) return [];
-                                var count = 0;
-                                try {
-                                    if (typeof container.GetElementsCount === "function") count = container.GetElementsCount();
-                                } catch (e) { return []; }
-
-                                for (var i = 0; i < count; i++) {
-                                    var el = container.GetElement(i);
-                                    if (!el) continue;
-                                    var type = el.GetClassType();
-
-                                    if (type === "paragraph") {
-                                        paragraphs.push(el);
-                                    } else if (type === "table") {
-                                        var rowCount = el.GetRowsCount();
-                                        for (var r = 0; r < rowCount; r++) {
-                                            var row = el.GetRow(r);
-                                            var cellCount = row.GetCellsCount();
-                                            for (var c = 0; c < cellCount; c++) {
-                                                var cell = row.GetCell(c);
-                                                paragraphs = paragraphs.concat(collectAllParagraphs(cell));
-                                            }
-                                        }
-                                    } else if (type === "contentControl") {
-                                        if (typeof el.GetContent === "function") {
-                                            paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
-                                        }
-                                    } else if (type === "group") {
-                                        if (typeof el.GetContent === "function") {
-                                            paragraphs = paragraphs.concat(collectAllParagraphs(el.GetContent()));
-                                        }
-                                    }
-                                }
-                                return paragraphs;
-                            }
-
-                            var allParagraphs = collectAllParagraphs(oDocument);
-
-                            for (var i = 0; i < allParagraphs.length; i++) {
-                                var oParagraph = allParagraphs[i];
-                                oParagraph.RemoveAllElements();
-                                var paraModel = Asc.scope.originalDocumentModel[i];
-                                for (var k = 0; k < paraModel.textRuns.length; k++) {
-                                    var runData = paraModel.textRuns[k];
-                                    var oNewRun = Api.CreateRun();
-                                    oNewRun.AddText(runData.text);
-
-                                    if (runData.formatting) {
-                                        var f = runData.formatting;
-                                        if (f.color) {
-                                            oNewRun.SetColor(f.color[0], f.color[1], f.color[2]);
-                                        }
-                                        if (f.bold) oNewRun.SetBold(true);
-                                        if (f.italic) oNewRun.SetItalic(true);
-                                        if (f.underline) oNewRun.SetUnderline(f.underline);
-                                        if (f.strikeout) oNewRun.SetStrikeout(true);
-                                        if (f.fontFamily) oNewRun.SetFontFamily(f.fontFamily);
-                                        if (f.fontSize) oNewRun.SetFontSize(f.fontSize);
-                                    }
-                                    oParagraph.AddElement(oNewRun);
-                                }
-                            }
-                        } catch (err) {
-                            return "ERROR: " + err.toString();
-                        }
-                    }, false, true, function () {
                         if (dyslexiaStatus) {
-                            dyslexiaStatus.textContent = "Inactive";
+                            dyslexiaStatus.textContent = "Inactif";
                             dyslexiaStatus.style.color = "inherit";
                         }
-                    });
+                    }
+                } catch (err) {
+                    console.error("Error in dyslexia toggle:", err);
+                    if (window.logger) window.logger.error("Dyslexia Toggle Error: " + err.message);
                 }
             });
         }
     }
+
 
     function checkFont() {
         window.Asc.plugin.callCommand(function () {
