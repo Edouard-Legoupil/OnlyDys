@@ -157,10 +157,8 @@
                         formatting.color = color;
                     }
                 } else {
-                    // No color specified, preserve original
-                    if (!useHighlighting) {
-                        formatting.color = run.formatting.color;
-                    }
+                    // No color specified, set to null
+                    formatting.color = null;
                 }
 
                 newRuns.push({ text: text, formatting: formatting });
@@ -169,10 +167,10 @@
             // Helper to get the appropriate palette based on highlighting mode
             const getPalette = (paletteKey) => {
                 const useHighlighting = config.options && config.options.useHighlighting;
-                if (useHighlighting && this.highlightPalettes[paletteKey]) {
-                    return this.highlightPalettes[paletteKey];
+                if (useHighlighting && ColorizationEngine.highlightPalettes[paletteKey]) {
+                    return ColorizationEngine.highlightPalettes[paletteKey];
                 }
-                return this.palettes[paletteKey];
+                return ColorizationEngine.palettes[paletteKey];
             };
 
             if (config.mode === 'alternlines') {

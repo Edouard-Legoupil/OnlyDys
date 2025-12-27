@@ -1,5 +1,134 @@
 (function (window, undefined) {
 
+    const suggestionService = (function () {
+        let pollingInterval = null;
+        let lastCheckedText = "";
+        let mode = 'onthego'; // Default mode
+
+        let modeToggle;
+        let modeStatus;
+
+        function processSuggestions(text) {
+            const container = document.getElementById('suggestions-container');
+            if (!container) return;
+
+            if (text === lastCheckedText && text.trim().length === 0) return;
+
+            container.innerHTML = '';
+
+            if (text && text.trim().length > 0) {
+                const words = text.trim().split(/\s+/);
+                let motPrecedent = null;
+
+                words.forEach((motSaisi) => {
+                    if (motSaisi.length > 2) {
+                        const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
+                        if (suggestions.length > 0) {
+                            const header = document.createElement('h4');
+                            header.textContent = `Suggestions for "${motSaisi}"`;
+                            header.style.marginLeft = '12px';
+                            container.appendChild(header);
+                            window.OnlyDysUI.displaySuggestions(suggestions, motSaisi, true);
+                        }
+                        motPrecedent = motSaisi;
+                    }
+                });
+            }
+            lastCheckedText = text;
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function startPolling() {
+            stopPolling();
+            pollingInterval = setInterval(() => {
+                window.Asc.plugin.callCommand(function () {
+                    var oDocument = Api.GetDocument();
+                    var oRange = oDocument.GetSelection();
+                    var text = "";
+
+                    try {
+                        if (oRange && oRange.IsCollapsed && oRange.IsCollapsed()) {
+                            logger.info("Selection is collapsed. Trying to expand to word.");
+                            var originalStart = oRange.GetStart();
+                            var originalEnd = oRange.GetEnd();
+
+                            oRange.ExpandToWord();
+                            text = oRange.GetText();
+                            logger.info("Expanded to word: " + text);
+
+                            oRange.Select(originalStart, originalEnd);
+                        } else if (oRange) {
+                            text = oRange.GetText();
+                            logger.info("Got selected text: " + text);
+                        }
+                    } catch (e) {
+                        logger.error("Error in startPolling callCommand: " + e.message);
+                        text = ""; // fallback to empty text
+                    }
+                    return text;
+                }, false, true, function (text) {
+                    if (text !== lastCheckedText) {
+                        logger.info("New text for suggestions: " + text);
+                        processSuggestions(text);
+                    }
+                });
+            }, 1000);
+        }
+
+        function updateMode() {
+            if (modeToggle.checked) {
+                mode = 'onthego';
+                modeStatus.textContent = 'Au fur et à mesure';
+                startPolling();
+            } else {
+                mode = 'selection';
+                modeStatus.textContent = 'Pour la sélection';
+                stopPolling();
+                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                    if (text) {
+                        const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
+                        processSuggestions(words);
+                    }
+                });
+            }
+        }
+
+        function onVisibilityChange() {
+            if (document.visibilityState === 'hidden') {
+                stopPolling();
+            } else {
+                updateMode();
+            }
+        }
+        
+        function start() {
+            modeToggle = document.getElementById('toggle-suggestion-mode');
+            modeStatus = document.getElementById('suggestion-mode-status');
+            modeToggle.addEventListener('change', updateMode);
+            document.addEventListener('visibilitychange', onVisibilityChange);
+            updateMode();
+        }
+
+        function stop() {
+            stopPolling();
+            if(modeToggle) {
+                modeToggle.removeEventListener('change', updateMode);
+            }
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+        }
+
+        return {
+            start: start,
+            stop: stop
+        };
+    })();
+
     // Function to debounce calls to the suggestion logic
     function debounce(func, delay) {
         let timeout;
@@ -11,6 +140,11 @@
 
     // Function to switch tabs
     function loadTab(tabName) {
+        const activeTab = document.querySelector('.tab-button.active');
+        if (activeTab && activeTab.dataset.tab === 'suggestions' && tabName !== 'suggestions') {
+            suggestionService.stop();
+        }
+
         // Toggle Active Class on Buttons
         const tabButtons = document.querySelectorAll('.tab-button');
         tabButtons.forEach(btn => {
@@ -33,7 +167,7 @@
 
         // Initialize specific tab logic if needed (idempotent init is best)
         if (tabName === 'suggestions') {
-            initSuggestionsTab();
+            suggestionService.start();
         } else if (tabName === 'font') {
             initFontTab();
         } else if (tabName === 'dyslexia') {
@@ -173,158 +307,310 @@
     };`;
 
     const COLORIZATION_ENGINE_SOURCE = `
-    var ColorizationEngine = {
+(function (window) {
+    'use strict';
+
+    const GRAMMAR_COLOR_MAP = {
+        'NOM': '#A60628',
+        'VER': '#0047AB',
+        'ADJ': '#006994',
+        'ADV': '#006B3C',
+        'PRO': '#AA3300',
+        'DET': '#6D214F',
+        'PRE': '#000000',
+        'CON': '#663300',
+        'INT': '#8B008B',
+    };
+
+    function displayColorLegend() {
+        const legendContainer = document.getElementById('color-legend');
+        if (!legendContainer) return;
+        legendContainer.innerHTML = '';
+        for (const [grammar, color] of Object.entries(GRAMMAR_COLOR_MAP)) {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+
+            const colorBox = document.createElement('div');
+            colorBox.className = 'legend-color';
+            colorBox.style.backgroundColor = color;
+
+            const label = document.createElement('span');
+            label.textContent = grammar;
+
+            item.appendChild(colorBox);
+            item.appendChild(label);
+            legendContainer.appendChild(item);
+        }
+    }
+
+    const ColorizationEngine = {
         palettes: {
-            phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
-            syllables: ["#D55E00", "#0072B2"],
-            words: ["#000000", "#0072B2"],
-            lines: ["#000000", "#0072B2"],
-            vowels: "#CC79A7", consonants: "#0072B2", silent: "#999999", punctuation: "#CC79A7",
-            letters: ["#E69F00", "#56B4E9", "#009E73", "#F0E442"],
-            grammar: { 'NOM': '#D55E00', 'VER': '#0072B2', 'ADJ': '#56B4E9', 'ADV': '#009E73', 'PRO': '#E69F00', 'DET': '#CC79A7', 'PRE': '#000000', 'CON': '#999999', 'INT': '#F0E442' }
+            phonemes: [
+                "#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994",
+                "#663300", "#8B008B", "#000000"
+            ],
+            syllables: ["#A60628", "#0047AB"],
+            words: ["#000000", "#0047AB"],
+            lines: ["#000000", "#0047AB"],
+            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
+            vowels: "#6D214F",
+            consonants: "#0047AB",
+            silent: "#606060",
+            punctuation: "#6D214F",
+            grammar: {
+                'NOM': '#A60628', 'VER': '#0047AB', 'ADJ': '#006994', 'ADV': '#006B3C',
+                'PRO': '#AA3300', 'DET': '#6D214F', 'PRE': '#000000', 'CON': '#663300', 'INT': '#8B008B'
+            }
         },
+
+        highlightPalettes: {
+            phonemes: [
+                "#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC", "#E6F9FF",
+                "#F5E6D3", "#F2E6FF", "#F0F0F0"
+            ],
+            syllables: ["#FFE6E6", "#E6F2FF"],
+            words: ["#F0F0F0", "#E6F2FF"],
+            lines: ["#F0F0F0", "#E6F2FF"],
+            letters: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC"],
+            vowels: "#F2E6FF",
+            consonants: "#E6F2FF",
+            silent: "#F0F0F0",
+            punctuation: "#F2E6FF",
+            grammar: {
+                'NOM': '#FFE6E6', 'VER': '#E6F2FF', 'ADJ': '#E6F9FF', 'ADV': '#E6F9E6',
+                'PRO': '#FFE6CC', 'DET': '#F2E6FF', 'PRE': '#F0F0F0', 'CON': '#F5E6D3', 'INT': '#F2E6FF'
+            }
+        },
+
+        lineColors: ["#FFFACD", "#E0F0FF"],
+
         processModel: function (model, config) {
-            var processedModel = JSON.parse(JSON.stringify(model));
-            var wordMap = null;
-            processedModel.paragraphs.forEach(function(para) {
-                var newRuns = [];
-                para.textRuns.forEach(function(run) {
+            const processedModel = JSON.parse(JSON.stringify(model));
+            let wordMap = null;
+            if (config.mode === 'grammar' && window.OnlyDysLogic && window.OnlyDysLogic.dictionary) {
+                wordMap = new Map(window.OnlyDysLogic.dictionary.map(entry => [entry.w.toLowerCase(), entry.g]));
+            }
+
+            processedModel.paragraphs.forEach(para => {
+                const newRuns = [];
+                para.textRuns.forEach(run => {
                     if (!run.text) return;
-                    var transformedRuns = ColorizationEngine.processRun(run, config, wordMap);
-                    newRuns.push.apply(newRuns, transformedRuns);
+                    const transformedRuns = this.processRun(run, config, wordMap);
+                    newRuns.push(...transformedRuns);
                 });
                 para.textRuns = newRuns;
             });
+
             return processedModel;
         },
+
         processRun: function (run, config, wordMap) {
-            var originalText = run.text;
-            var engine = LinguisticEngine;
-            var newRuns = [];
-            var addSegment = function(text, color, extraFormatting) {
-                extraFormatting = extraFormatting || {};
-                var formatting = {};
-                for (var key in run.formatting) { formatting[key] = run.formatting[key]; }
-                formatting.color = (color === undefined) ? run.formatting.color : color;
-                for (var key in extraFormatting) { formatting[key] = extraFormatting[key]; }
+            const originalText = run.text;
+            const engine = window.LinguisticEngine;
+            const newRuns = [];
+
+            const addSegment = (text, color, extraFormatting = {}) => {
+                const useHighlighting = config.options && config.options.useHighlighting;
+                const formatting = { ...run.formatting, ...extraFormatting };
+
+                if (color !== null && color !== undefined) {
+                    if (useHighlighting) {
+                        formatting.backgroundColor = color;
+                        formatting.color = '#000000';
+                    } else {
+                        formatting.color = color;
+                    }
+                } else {
+                    formatting.color = null;
+                }
+
                 newRuns.push({ text: text, formatting: formatting });
             };
-            if (config.mode === 'grammar') {
-                var words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(function(token) {
-                    if (!token) return;
-                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    var lowerWord = token.toLowerCase();
-                    var grammar = wordMap ? wordMap.get(lowerWord) : null;
-                    var color = null;
-                    if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
+
+            const getPalette = (paletteKey) => {
+                const useHighlighting = config.options && config.options.useHighlighting;
+                if (useHighlighting && ColorizationEngine.highlightPalettes[paletteKey]) {
+                    return ColorizationEngine.highlightPalettes[paletteKey];
+                }
+                return ColorizationEngine.palettes[paletteKey];
+            };
+
+            if (config.mode === 'alternlines') {
+                const lineIndex = config.lineIndex || 0;
+                const bgColor = this.lineColors[lineIndex % this.lineColors.length];
+                addSegment(originalText, null, { backgroundColor: bgColor });
+
+            } else if (config.mode === 'grammar') {
+                const words = originalText.split(/(\\P{L}+)/u).filter(t => t !== "");
+                const grammarPalette = getPalette('grammar');
+
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") {
+                        addSegment(token, null);
+                        return;
+                    }
+
+                    const lowerWord = token.toLowerCase();
+                    let grammar = wordMap ? wordMap.get(lowerWord) : null;
+                    if (!grammar && wordMap && engine.lemmatize) {
+                        const lemma = engine.lemmatize(lowerWord, wordMap);
+                        grammar = wordMap.get(lemma);
+                    }
+
+                    let color = null;
+                    if (grammar && grammarPalette[grammar]) {
+                        color = grammarPalette[grammar];
+                    }
                     addSegment(token, color);
                 });
+
             } else if (config.mode === 'phonemes' || config.mode === 'alternphonemes') {
-                var words = originalText.split(/(\\P{L}+)/u);
-                var phonemeCount = 0;
-                words.forEach(function(token) {
-                    if (!token) return;
-                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    try {
-                        var analysis = engine.analyzeWord(token);
-                        if (!analysis || !analysis.phonemes) { addSegment(token, null); return; }
-                        analysis.phonemes.forEach(function(p, idx) {
-                            var color;
-                            if (config.mode === 'alternphonemes') {
-                                color = ColorizationEngine.palettes.phonemes[phonemeCount % ColorizationEngine.palettes.phonemes.length];
-                                phonemeCount++;
-                            } else {
-                                var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
-                                color = ColorizationEngine.palettes.phonemes[colorIndex];
-                            }
-                            addSegment(p, color);
-                        });
-                    } catch (e) { addSegment(token, null); }
+                const words = originalText.split(/(\\P{L}+)/u).filter(t => t !== "");
+                const phonemesPalette = getPalette('phonemes');
+                let phonemeCount = 0;
+
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") {
+                        addSegment(token, null);
+                        return;
+                    }
+
+                    const analysis = engine.analyzeWord(token);
+                    analysis.phonemes.forEach((p, idx) => {
+                        let color;
+                        if (config.mode === 'alternphonemes') {
+                            color = phonemesPalette[phonemeCount % phonemesPalette.length];
+                            phonemeCount++;
+                        } else {
+                            const colorIndex = Math.abs(this.hashCode(p.toLowerCase())) % phonemesPalette.length;
+                            color = phonemesPalette[colorIndex];
+                        }
+                        addSegment(p, color);
+                    });
                 });
+
             } else if (config.mode === 'syllables') {
-                var words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(function(token) {
-                    if (!token) return;
-                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    try {
-                        var syllables = engine.segmentSyllables(token);
-                        if (!syllables) { addSegment(token, null); return; }
-                        syllables.forEach(function(s, idx) {
-                            var color = ColorizationEngine.palettes.syllables[idx % ColorizationEngine.palettes.syllables.length];
-                            addSegment(s, color);
-                        });
-                    } catch (e) { addSegment(token, null); }
+                const words = originalText.split(/(\\P{L}+)/u).filter(t => t !== "");
+                const syllablesPalette = getPalette('syllables');
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") {
+                        addSegment(token, null);
+                        return;
+                    }
+
+                    const syllables = engine.segmentSyllables(token);
+                    syllables.forEach((s, idx) => {
+                        const color = syllablesPalette[idx % syllablesPalette.length];
+                        const extra = (config.options && config.options.showArcs) ? { showArc: true } : {};
+                        addSegment(s, color, extra);
+                    });
                 });
+
             } else if (config.mode === 'alternlettres') {
-                var letterCount = 0;
-                for (var i = 0; i < originalText.length; i++) {
-                    var char = originalText.charAt(i);
-                    if (engine.isPunctuation(char) || /^\\s$/.test(char)) { addSegment(char, null); }
-                    else {
-                        var color = ColorizationEngine.palettes.letters[letterCount % ColorizationEngine.palettes.letters.length];
+                const lettersPalette = getPalette('letters');
+                let letterCount = 0;
+                for (let i = 0; i < originalText.length; i++) {
+                    const char = originalText[i];
+                    if (engine.isPunctuation(char) || /\\s/.test(char)) {
+                        addSegment(char, null);
+                    } else {
+                        const color = lettersPalette[letterCount % lettersPalette.length];
                         addSegment(char, color);
                         letterCount++;
                     }
                 }
+
             } else if (config.mode === 'alternmots') {
-                var words = originalText.split(/(\\s+)/u);
-                var wordIdx = 0;
-                words.forEach(function(token) {
-                    if (/^\\s+$/.test(token) || token === "") { addSegment(token, null); }
-                    else {
-                        var color = ColorizationEngine.palettes.words[wordIdx % ColorizationEngine.palettes.words.length];
+                const wordsPalette = getPalette('words');
+                const words = originalText.split(/(\\s+)/u).filter(t => t !== "");
+                let wordIdx = 0;
+                words.forEach(token => {
+                    if (/\\s+/.test(token) || token === "") {
+                        addSegment(token, null);
+                    } else {
+                        const color = wordsPalette[wordIdx % wordsPalette.length];
                         addSegment(token, color);
                         wordIdx++;
                     }
                 });
+
             } else if (config.mode === 'vowels' || config.mode === 'consonants') {
-                for (var i = 0; i < originalText.length; i++) {
-                    var char = originalText.charAt(i);
-                    var color = null;
-                    if (config.mode === 'vowels' && engine.isVowel(char)) color = ColorizationEngine.palettes.vowels;
-                    else if (config.mode === 'consonants' && engine.isConsonant(char)) color = ColorizationEngine.palettes.consonants;
-                    addSegment(char, color);
-                }
-            } else if (config.mode === 'letters' && config.options && config.options.targetLetters) {
-                var targets = config.options.targetLetters.toLowerCase();
-                for (var i = 0; i < originalText.length; i++) {
-                    var char = originalText.charAt(i);
-                    var color = null;
-                    if (targets.indexOf(char.toLowerCase()) !== -1) {
-                        var tIdx = targets.indexOf(char.toLowerCase());
-                        color = ColorizationEngine.palettes.phonemes[tIdx % ColorizationEngine.palettes.phonemes.length];
+                const vowelColor = getPalette('vowels');
+                const consonantColor = getPalette('consonants');
+                for (let i = 0; i < originalText.length; i++) {
+                    const char = originalText[i];
+                    let color = null;
+                    if (config.mode === 'vowels' && engine.isVowel(char)) {
+                        color = vowelColor;
+                    } else if (config.mode === 'consonants' && engine.isConsonant(char)) {
+                        color = consonantColor;
                     }
                     addSegment(char, color);
                 }
+
+            } else if (config.mode === 'letters' && config.options && config.options.targetLetters) {
+                const phonemesPalette = getPalette('phonemes');
+                const targets = config.options.targetLetters.toLowerCase();
+                for (let i = 0; i < originalText.length; i++) {
+                    const char = originalText[i];
+                    let color = null;
+                    if (targets.includes(char.toLowerCase())) {
+                        const idx = targets.indexOf(char.toLowerCase());
+                        color = phonemesPalette[idx % phonemesPalette.length];
+                    }
+                    addSegment(char, color);
+                }
+
             } else if (config.mode === 'silent') {
-                var words = originalText.split(/(\\P{L}+)/u);
-                words.forEach(function(token) {
-                    if (!token) return;
-                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") { addSegment(token, null); return; }
-                    var silentIndices = engine.detectSilentLetters(token);
-                    if (silentIndices.length === 0) { addSegment(token, null); }
-                    else {
-                        var lastIdx = 0;
-                        for (var i = 0; i < token.length; i++) {
-                            if (silentIndices.indexOf(i) !== -1) {
-                                if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
-                                addSegment(token.charAt(i), ColorizationEngine.palettes.silent);
+                const words = originalText.split(/(\\P{L}+)/u).filter(t => t !== "");
+                const silentColor = getPalette('silent');
+
+                words.forEach(token => {
+                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") {
+                        addSegment(token, null);
+                        return;
+                    }
+
+                    const silentIndices = engine.detectSilentLetters(token);
+                    if (silentIndices.length === 0) {
+                        addSegment(token, null);
+                    } else {
+                        let lastIdx = 0;
+                        for (let i = 0; i < token.length; i++) {
+                            if (silentIndices.includes(i)) {
+                                if (i > lastIdx) {
+                                    addSegment(token.substring(lastIdx, i), null);
+                                }
+                                addSegment(token[i], silentColor);
                                 lastIdx = i + 1;
-                             }
+                            }
                         }
-                        if (lastIdx < token.length) addSegment(token.substring(lastIdx), null);
+                        if (lastIdx < token.length) {
+                            addSegment(token.substring(lastIdx), null);
+                        }
                     }
                 });
-            } else { addSegment(originalText, null); }
+
+            } else {
+                addSegment(originalText, null);
+            }
+
             return newRuns;
         },
+
         hashCode: function (str) {
-            var hash = 0;
-            for (var i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
             return hash;
         }
-    };`;
+    };
+
+    window.ColorizationEngine = ColorizationEngine;
+
+})(window);
+`;
 
     let lastActionWasColorization = false;
 
@@ -1007,11 +1293,14 @@
     }
 
     function initSuggestionsTab() {
-        const pasteSelectionButton = document.getElementById('paste-selection');
-        const checkTextButton = document.getElementById('check-text-button');
         const modeRadios = document.getElementsByName('suggestion-mode');
-        let pollingInterval = null;
         let lastCheckedText = "";
+
+        // Set "onthego" as the default mode
+        const onTheGoRadio = document.querySelector('input[name="suggestion-mode"][value="onthego"]');
+        if (onTheGoRadio) {
+            onTheGoRadio.checked = true;
+        }
 
         // Common function to process text and display suggestions
         function processSuggestions(text) {
@@ -1044,20 +1333,12 @@
             lastCheckedText = text;
         }
 
-        function stopPolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                pollingInterval = null;
-            }
-        }
-
         function startPolling() {
             stopPolling();
             // Poll every 1 second
             pollingInterval = setInterval(() => {
                 window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
                     if (text !== lastCheckedText) {
-                        document.getElementById('textarea').innerText = text;
                         processSuggestions(text);
                     }
                 });
@@ -1074,20 +1355,13 @@
             }
 
             if (mode === 'onthego') {
-                // Disable manual buttons
-                if (pasteSelectionButton) pasteSelectionButton.style.display = 'none';
-                if (checkTextButton) checkTextButton.style.display = 'none';
                 startPolling();
             } else {
-                // Enable manual buttons
-                if (pasteSelectionButton) pasteSelectionButton.style.display = 'block';
-                if (checkTextButton) checkTextButton.style.display = 'block';
                 stopPolling();
-
                 window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
                     if (text) {
-                        document.getElementById('textarea').innerText = text;
-                        processSuggestions(text);
+                        const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
+                        processSuggestions(words);
                     }
                 });
             }
@@ -1097,25 +1371,16 @@
             radio.addEventListener('change', updateMode);
         });
 
+        // Add visibility change event listener
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                stopPolling();
+            } else {
+                updateMode();
+            }
+        });
+
         updateMode();
-
-
-        if (pasteSelectionButton) {
-            pasteSelectionButton.addEventListener('click', function () {
-                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                    if (text) {
-                        document.getElementById('textarea').innerText = text;
-                    }
-                });
-            });
-        }
-
-        if (checkTextButton) {
-            checkTextButton.addEventListener('click', function () {
-                const text = document.getElementById('textarea').innerText;
-                processSuggestions(text);
-            });
-        }
     }
 
     function initFontTab() {
@@ -1213,7 +1478,11 @@
     }
 
 
+    let isInitialized = false;
     window.Asc.plugin.init = function () {
+        if (isInitialized) return;
+        isInitialized = true;
+
         window.OnlyDysLogic.loadDictionary().then(() => {
             logger.info('Dictionary loaded, initializing tabs.');
         });
@@ -1233,3 +1502,4 @@
     };
 
 })(window, undefined);
+

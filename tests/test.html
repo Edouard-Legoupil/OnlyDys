@@ -53,16 +53,25 @@
 
             const categories = {
                 'grammar': 'Grammaire (Full Dictionary)',
+                'grammar-highlight': 'Grammaire (Highlighting)',
                 'phonemes': 'Phonèmes (Nature)',
+                'phonemes-highlight': 'Phonèmes (Nature, Highlighting)',
                 'alternphonemes': 'Phonèmes (Alternés)',
+                'alternphonemes-highlight': 'Phonèmes (Alternés, Highlighting)',
                 'syllables': 'Syllabes',
                 'syllables-arcs': 'Syllabes (avec Arcs)',
+                'syllables-highlight': 'Syllabes (Highlighting)',
                 'silent': 'Lettres silencieuses',
+                'silent-highlight': 'Lettres silencieuses (Highlighting)',
                 'alternlettres': 'Lettres (Alternées)',
+                'alternlettres-highlight': 'Lettres (Alternées, Highlighting)',
                 'alternmots': 'Mots (Alternés)',
                 'vowels': 'Voyelles',
+                'vowels-highlight': 'Voyelles (Highlighting)',
                 'consonants': 'Consonnes',
-                'letters': 'Lettres spécifiques (bdpq)'
+                'consonants-highlight': 'Consonnes (Highlighting)',
+                'letters': 'Lettres spécifiques (bdpq)',
+                'letters-highlight': 'Lettres spécifiques (bdpq, Highlighting)'
             };
 
             // Build wordMap from full dictionary/mock
@@ -76,10 +85,10 @@
                 container.innerHTML = '';
             }
 
-            for (const mode in categories) {
+            for (const modeKey in categories) {
                 const section = document.createElement('div');
                 section.style.marginBottom = '20px';
-                section.innerHTML = `<h3>${categories[mode]}</h3>`;
+                section.innerHTML = `<h3>${categories[modeKey]}</h3>`;
 
                 edgeCases.forEach(text => {
                     const row = document.createElement('div');
@@ -87,13 +96,17 @@
                     row.style.padding = '5px';
                     row.style.borderLeft = '4px solid #ddd';
 
+                    const baseMode = modeKey.replace('-highlight', '');
+                    const useHighlighting = modeKey.includes('-highlight');
+
                     const result = window.ColorizationEngine.processRun(
                         { text: text, formatting: { color: "#000" } },
                         {
-                            mode: mode.startsWith('syllables') ? 'syllables' : mode,
+                            mode: baseMode.startsWith('syllables') ? 'syllables' : baseMode,
                             options: {
                                 targetLetters: "bdpq",
-                                showArcs: (mode === 'syllables-arcs')
+                                showArcs: (baseMode === 'syllables-arcs'),
+                                useHighlighting: useHighlighting
                             }
                         },
                         wordMap
@@ -104,6 +117,9 @@
                         span.textContent = run.text;
                         if (run.formatting && run.formatting.color) {
                             span.style.color = run.formatting.color;
+                        }
+                        if (run.formatting && run.formatting.backgroundColor) {
+                            span.style.backgroundColor = run.formatting.backgroundColor;
                         }
                         if (run.formatting && run.formatting.showArc) {
                             span.style.borderBottom = `2px solid ${run.formatting.color || '#000'}`;

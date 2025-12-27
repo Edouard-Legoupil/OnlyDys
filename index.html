@@ -20,6 +20,7 @@
     <script type="text/javascript" src="scripts/arcRenderer.js"></script>
     <script type="text/javascript" src="scripts/selectionManager.js"></script>
     <script type="text/javascript" src="scripts/configManager.js"></script>
+    <script type="text/javascript" src="scripts/pictogramService.js"></script>
     <script type="text/javascript" src="scripts/plugin.js"></script>
 </head>
 
@@ -35,29 +36,13 @@
         <!-- SUGGESTIONS TAB -->
         <div id="tab-suggestions" class="tab-pane active">
             <div style="margin: 12px 12px 4px 12px; width: calc(100% - 24px);">
-                <div id="mode-switch" style="margin-bottom: 10px;">
-                    <label class="radio-label">
-                        <input type="radio" name="suggestion-mode" value="selection" checked> Selection
+                <div class="toggle-switch-container">
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-suggestion-mode" checked>
+                        <span class="slider round"></span>
                     </label>
-                    <label class="radio-label" style="margin-left: 10px;">
-                        <input type="radio" name="suggestion-mode" value="onthego"> Au fur et à mesure
-                    </label>
+                    <span id="suggestion-mode-status" style="margin-left: 10px; font-weight: bold;">Au fur et à mesure</span>
                 </div>
-                <!-- Hidden button for now as Logic is handled by radio change or auto-fetch -->
-                <label id="paste-selection" class="unselectable"
-                    style="float: right; border-bottom: 1px dotted rgba(0,0,0, 0.4); cursor: pointer; display:none;">Paste
-                    Selection</label>
-            </div>
-
-            <div id="enter_container" class="form-control"
-                style="cursor: text; position: relative; margin: 0px 12px 0px 12px; min-height: 80px; max-height: 45%; height: fit-content; background: #fff; border: 1px solid #ccc; padding: 5px;">
-                <div id="textarea" contenteditable="true"
-                    style="min-width: 95%; max-width: 95%; height: fit-content; outline: none; white-space: normal; word-wrap: break-word;">
-                </div>
-            </div>
-
-            <div id="button_wrapper" style="margin: 10px 12px;">
-                <button id="check-text-button" class="primary" style="width: 100%;">Vérifier</button>
             </div>
 
             <div id="suggestions-container"
@@ -213,8 +198,7 @@
 
                 <ul>
                     <li>
-                        <strong>1. Suggestions en temps réel:</strong> Analyse et propose des corrections
-                        basées sur les 4 confusions les plus courantes:
+                        <strong>1. Aide à l'écriture:</strong> Le mode "Au fur et à mesure" analyse et propose des corrections en temps réel. Le mode "Pour la sélection" analyse les 9 premiers mots de la sélection. Les corrections sont basées sur les 4 confusions les plus courantes:
                         <ul>
                             <li> 🠲 <strong>Confusions Visuelles: ⚠️</strong> <span
                                     class="color-sample vermilion"></span>
@@ -233,10 +217,8 @@
                         </ul>
                     </li>
                     <li>
-                        <strong>2. Aide à la lecture:</strong> Colorisation par catégorie grammaticale, syllabes, sons.
-                    </li>
-                    <li>
-                        <strong>3. Formatage adapté:</strong> Police OpenDyslexic et espacement augmenté.
+                        <strong>2. Aide à la lecture:</strong> Colorisation par catégorie grammaticale, syllabes, sons
+                        et reformattage adapté.
                     </li>
                 </ul>
 
@@ -251,6 +233,16 @@
                         style="font-size: 11px; padding: 5px 10px; background-color: #f0f0f0; border: 1px solid #ccc; cursor: pointer;">Download
                         Debug Logs</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pictogram Modal -->
+    <div id="pictogram-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div id="pictogram-container">
+                <!-- Pictogram will be loaded here -->
             </div>
         </div>
     </div>
