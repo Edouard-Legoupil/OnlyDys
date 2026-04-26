@@ -1,38 +1,152 @@
+
+# OnlyDys - Plugin pour ONLYOFFICE
+
+(English version below at the end of the document)
+
+## Aperçu
+
+**OnlyDys** est un plugin respectueux de la vie privée pour ONLYOFFICE, conçu pour aider les utilisateurs souffrant de dyslexie, en particulier ceux qui écrivent en français. Il propose une suite complète d'outils pour rendre la lecture et l'écriture plus accessibles, incluant des suggestions de mots en temps réel, une mise en forme adaptée aux personnes dyslexiques et un codage couleur grammatical.
+
+Le plugin est compatible avec les versions self-hosted et de bureau des éditeurs ONLYOFFICE et peut être ajouté manuellement à n'importe quelle instance.
+
+## Fonctionnalités
+
+### 📝 **Système Intelligent de Suggestions**
+
+- **Deux Modes de Suggestion** :
+  - **Mode Sélection (Manuel)** : Sélectionnez du texte et cliquez sur "Coller la Sélection" pour obtenir des suggestions, ou tapez simplement dans la boîte.
+  - **Mode en Temps Réel (Automatique)** : Le plugin détecte automatiquement le mot sous votre curseur ou votre sélection et met à jour les suggestions en temps réel lorsque vous naviguez dans le document.
+
+- **Classification des Suggestions** : Chaque suggestion est catégorisée et codée par couleur pour vous aider à comprendre la nature de l'erreur potentielle :
+  - ⚠️🔴 **Confusion Visuelle** : Met en évidence les confusions possibles entre des lettres visuellement similaires (ex. b/d, p/q).
+  - 🔊🟧 **Confusion Phonétique** : Indique les mots qui s'écrivent différemment mais qui se prononcent de manière similaire.
+  - 🔀🟪 **Homophones** : Signale les mots qui se prononcent de la même manière mais qui ont des significations et des orthographes différents.
+  - 📝🟦 **Erreurs Morphologiques** : Détecte les erreurs courantes dans les terminaisons de mots, comme les pluriels ou les conjugaisons.
+
+- **Cartes de Suggestions Interactives** : Chaque suggestion est affichée sur une carte interactive :
+  - **Cliquez pour Remplacer** : Cliquez simplement sur la carte pour remplacer le mot dans le document par la suggestion.
+  - **Synthèse Vocale** : Cliquez sur l'icône du haut-parleur (🗣️) pour entendre le mot suggéré.
+  - **Affichage de Pictogrammes** : Affiche un pictogramme visuel pour le mot lorsqu'il est disponible, offrant une aide visuelle pour la compréhension.
+
+### 🎨 **Onglet Linguistique & Mise en Forme**
+
+- **Formatage** : Appliquez des polices adaptées aux personnes dyslexiques à l'ensemble du document avec un espacement amélioré pour une meilleure lisibilité :
+  - **Plusieurs Options de Polices** : Choisissez parmi OpenDyslexic, Luciole ou AccessibleDfA via des boutons radio
+  - **Espacement Cohérent** : Applique une hauteur de ligne optimisée (2.0em) et un espacement de lettres (36) pour une lisibilité améliorée
+  - **Préservation de l'État** : Sauvegarde et restaure automatiquement votre mise en forme précédente lors de l'activation/désactivation de la fonction
+
+- **Coloration Grammaticale** : Codez les mots par couleur selon leur catégorie grammaticale :
+  - Palette à fort contraste, adaptée aux daltoniens, avec des couleurs distinctes pour chaque catégorie
+  - Noms, Verbes, Adjectifs, Adverbes, Pronoms, Déterminants, Prépositions, Conjonctions, Interjections
+  - Légende de couleurs interactive indiquant quelle couleur représente chaque catégorie
+
+- **Analyse Phonétique** :
+  - **Coloration des Phonèmes** : Met en évidence les phonèmes distincts (sons) avec différentes couleurs
+  - **Segmentation des Syllabes** : Colorie les syllabes en utilisant des nuances alternées pour une meilleure reconnaissance visuelle
+  - **Arcs de Syllabes** : Dessine des arcs vectoriels sous les syllabes pour aider à identifier la structure des mots
+  - **Détection des Lettres Muettes** : Détecte et grise automatiquement les lettres muettes
+
+- **Motifs Alternés** : Appliquez des motifs de couleurs alternées à :
+  - Les phonèmes, lettres, mots ou lignes pour un suivi visuel amélioré
+
+### 🎭 **Simulation de la Dyslexie**
+
+- **Simulation de Texte** : Activez la simulation de dyslexie pour expérimenter comment une personne dyslexique pourrait percevoir le texte, promouvant la sensibilisation et la compréhension
+
+### 🔧 **Fonctionnalités Système**
+
+- **Détection Intelligente des Polices** : Le plugin vérifie automatiquement si des polices adaptées aux personnes dyslexiques sont installées sur votre système. Si elles manquent, un onglet "Police" fournit des instructions d'installation claires.
+- **Non Invasif** : Toutes les mises en forme et styles peuvent être activées/désactivées, avec une restauration propre de l'état original du document.
+- **Respect de la Vie Privée** : Tout le traitement du texte se fait localement dans votre navigateur - aucune donnée n'est envoyée à des serveurs externes.
+
+## Comment Utiliser
+
+1. **Ouvrir le Plugin** : Cliquez sur l'onglet "Plugins" dans l'éditeur ONLYOFFICE et sélectionnez le plugin "OnlyDys".
+2. **Obtenir des Suggestions** :
+   - **Par défaut** : Utilisez le bouton bascule pour passer entre les modes "Sélection" (Manuel) ou "En Temps Réel" (Auto).
+   - **En Temps Réel** : Déplacez simplement votre curseur ou sélectionnez du texte ; les suggestions apparaissent automatiquement.
+   - **Manuel** : Sélectionnez du texte, cliquez sur "Coller la Sélection", puis "Vérifier".
+   - Pour remplacer un mot, cliquez sur la carte de suggestion souhaitée.
+3. **Linguistique & Mise en Forme** :
+   - Passez à l'**onglet "Linguistique"**.
+   - **Appliquer la Police & l'Espacement** : Cliquez sur le bouton en bas pour appliquer la police OpenDyslexic et l'espacement globalement (sans couleurs).
+   - **Appliquer l'Analyse/Coloration** :
+     - Sélectionnez un **Mode** (Catégories Grammaticales, Phonèmes, Syllabes, etc.).
+     - Cliquez sur **Appliquer à la Sélection** pour colorier le texte sélectionné.
+4. **Simulation de la Dyslexie** :
+   - Passez à l'**onglet "Dyslexie"** pour simuler comment une personne dyslexique pourrait percevoir le texte.
+
+## Installation
+
+Pour installer le plugin OnlyDys :
+
+ - Dans `ONLYOFFICE Desktop Editors`, ouvrez l'onglet **Plugins**.
+ - Cliquez sur **Paramètres** -> **Ajouter un Plugin**.
+ - Sélectionnez le fichier [OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin).
+
+Le plugin OnlyDys sera alors disponible dans l'onglet "Plugins".
+
+
+-----
+
+
 # OnlyDys Plugin for ONLYOFFICE
 
 ## Overview
 
-OnlyDys is a privacy-first ONLYOFFICE plugin designed to assist users with dyslexia, particularly those writing in French. It provides a suite of tools to make reading and writing more accessible, including real-time word suggestions, dyslexia-friendly document styling, and grammatical color-coding.
+OnlyDys is a privacy-first ONLYOFFICE plugin designed to assist users with dyslexia, particularly those writing in French. It provides a comprehensive suite of tools to make reading and writing more accessible, including real-time word suggestions, dyslexia-friendly document styling, and grammatical color-coding.
 
 The plugin is compatible with both self-hosted and desktop versions of ONLYOFFICE editors and can be added manually to any instance.
 
 ## Features
 
-- **Two Suggestion Modes**:
-    - **Selection Mode (Manual)**: Select text and click "Paste Selection" to get suggestions, or simply type in the box.
-    - **On-the-go Mode (Automatic)**: The plugin automatically detects the word under your cursor or selection and updates suggestions in real-time as you navigate.
+### 📝 **Intelligent Suggestion System**
 
-- **Suggestion Classification**: Each suggestion is categorized and color-coded to help the user understand the nature of the potential error:
-    - ⚠️🔴 **Visual Confusion**: Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).
-    - 🔊🟧 **Phonetic Confusion**: Indicates words that are spelled differently but sound similar.
-    - 🔀🟪 **Homophones**: Flags words that sound the same but have different meanings and spellings.
-    - 📝🟦 **Morphological Errors**: Catches common mistakes in word endings, like pluralization or conjugation.
+- **Two Suggestion Modes**:
+  - **Selection Mode (Manual)**: Select text and click "Paste Selection" to get suggestions, or simply type in the box.
+  - **On-the-go Mode (Automatic)**: The plugin automatically detects the word under your cursor or selection and updates suggestions in real-time as you navigate through the document.
+
+- **Suggestion Classification**: Each suggestion is categorized and color-coded to help you understand the nature of the potential error:
+  - ⚠️🔴 **Visual Confusion**: Highlights possible mix-ups between visually similar letters (e.g., b/d, p/q).
+  - 🔊🟧 **Phonetic Confusion**: Indicates words that are spelled differently but sound similar.
+  - 🔀🟪 **Homophones**: Flags words that sound the same but have different meanings and spellings.
+  - 📝🟦 **Morphological Errors**: Catches common mistakes in word endings, like pluralization or conjugation.
 
 - **Interactive Suggestion Cards**: Each suggestion is displayed on an interactive card:
-    - **Click to Replace**: Simply click the card to replace the word in the document with the suggestion.
-    - **Text-to-Speech**: Click the speaker icon (🗣️) to hear the suggested word read aloud.
-    - **Illustrations**: Displays an image for the word when available, providing a visual aid for comprehension.
+  - **Click to Replace**: Simply click the card to replace the word in the document with the suggestion.
+  - **Text-to-Speech**: Click the speaker icon (🗣️) to hear the suggested word read aloud.
+  - **Pictogram Display**: Shows a visual pictogram for the word when available, providing a visual aid for comprehension.
 
-- **Advanced Linguistic Formatting & Styling**: A dedicated "Linguistics" tab provides deep linguistic analysis and styling for French text:
-    - **Global Formatting**: With a single click, apply **OpenDyslexic Font** and enhanced spacing to the entire document (without changing colors).
-    - **Grammatical Coloring**: Select "Grammatical Categories" mode to color-code words (Noun, Verb, etc.) based on their function.
-    - **Phoneme Colorization**: Highlights distinct phonemes (sounds) with different colors.
-    - **Syllable Segmentation**:
-        - **Alternating Colors**: colors syllables in alternating shades.
-        - **Syllable Arcs**: Draws vector arcs underneath syllables.
-    - **Silent Letter Detection**: Automatically detects and greys out silent letters.
+### 🎨 **Linguistics & Styling Tab**
 
-- **Smart Font Detection**: The plugin automatically checks if the **OpenDyslexic** font is installed on your system. If missing, a "Font" tab will appear with installation instructions.
+- **Formatting (Formatage)**: Apply dyslexia-friendly fonts to the entire document with enhanced spacing for better readability:
+  - **Multiple Font Options**: Choose from OpenDyslexic, Luciole, or AccessibleDfA fonts via radio buttons
+  - **Consistent Spacing**: Applies optimized line height (2.0em) and letter spacing (36) for improved legibility
+  - **State Preservation**: Automatically saves and restores your previous formatting when toggling the feature on/off
+
+- **Grammatical Color-Coding**: Color-code words based on their grammatical category:
+  - High-contrast, color-blind friendly palette with distinct colors for each category
+  - Nouns, Verbs, Adjectives, Adverbs, Pronouns, Determiners, Prepositions, Conjunctions, Interjections
+  - Interactive color legend showing which color represents each category
+
+- **Phonetic Analysis**:
+  - **Phoneme Colorization**: Highlights distinct phonemes (sounds) with different colors
+  - **Syllable Segmentation**: Color syllables using alternating shades for better visual recognition
+  - **Syllable Arcs**: Draws vector arcs underneath syllables to help identify word structure
+  - **Silent Letter Detection**: Automatically detects and greys out silent letters
+
+- **Alternating Patterns**: Apply alternating color patterns to:
+  - Phonemes, Letters, Words, or Lines for enhanced visual tracking
+
+### 🎭 **Dyslexia Simulation**
+
+- **Text Simulation**: Activate the dyslexia simulation to experience how a dyslexic person might perceive text, promoting awareness and sensitivity
+
+### 🔧 **System Features**
+
+- **Smart Font Detection**: The plugin automatically checks if dyslexia-friendly fonts are installed on your system. If missing, a "Font" tab provides clear installation instructions.
+- **Non-Invasive**: All formatting and styling can be toggled on/off, with clean restoration to the original document state.
+- **Privacy-First**: All text processing happens locally within your browser - no data is sent to external servers.
 
 ## How to Use
 
@@ -62,193 +176,3 @@ To install the OnlyDys plugin:
  - Select the [OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin) file.
     
 The OnlyDys plugin will be then available in the "Plugins" tab.
-
-
-## Development
-
-
-### Background 
-
-The primary user and tester for this plugin is my daughter, Lisa, and the school she is attending in Normandy. Though, this tool might support  as well other kids with similar challenges. 
-
-I have reviewed a set of existing tools (unfortunately none being both open source and working on a Linux desktop...) and combined them to build this plugin:
-
- - [PhonoWriter](https://www.jeanclaudegabus.ch/produits/phonowriter/)
- - [Colorization](https://colorization.ch/)
- - [LireCouleur](https://forge.apps.education.fr/lirecouleur/lirecouleur.forge.apps.education.fr)
- - [Studys](https://studys.fusofrance.org/)
- - [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
- - [Lexibar](https://www.lexibar.ca/ca/en/)
-
-The plugins integrates fonts with specific focus on dyslexia and dysgraphia:
-
-- [OpenDyslexic](https://opendyslexic.org/)
-- [Accessible-DfA](https://github.com/Orange-OpenSource/font-accessible-dfa)
-- [Luciole](https://www.luciole-vision.com/#download)
-
-### Environment
-
-This tool was mostly coded using vibe coding in [Antigravity](https://antigravity.google/) and [jules](https://jules.google.com). You can clone the repository to contribute. **To build the plugin**:
- - Run the build script: `python3 package_plugin.py`
- - This will create the `OnlyDys.plugin` file in the `deploy` folder.
-
-If you spot any issue or have any ideas of additional features or capabilities, please [create an issue here](https://github.com/Edouard-Legoupil/OnlyDys/issues/new).
-
-
-### Viewing Logs
-
-The plugin uses a custom logger to output debugging information to the browser's console. To view the logs, you'll need to open the developer tools in your browser.
-
-1.  **Open the developer tools.** In most browsers, you can do this by pressing `F12` or by right-clicking on the page and selecting "Inspect".
-2.  **Navigate to the console.** The console is where the plugin will output its logs.
-3.  **Set the log level.** By default, the logger is set to the `INFO` level. You can change the log level by opening the console and typing `logger.setLevel(logger.LogLevel.DEBUG)`. This will enable all logging levels.
-
-### Running Unit Tests
-
-The plugin includes a suite of unit tests to ensure that the core logic is working correctly. To run the tests, you'll need to open the `tests/test.html` file in your browser.
-
-1.  **Navigate to the `tests/` directory.**
-2.  **Open the `test.html` file in your browser.** This will run the tests and display the results in the browser.
-
-### Architecture & Class Interactions
-
-The OnlyDys plugin follows a modular architecture where different components handle specific linguistic and UI tasks.
-
-
-
-| Component | File Reference | Responsibility |
-| :--- | :--- | :--- |
-| **plugin.js** | [scripts/plugin.js](scripts/plugin.js) | The core orchestrator. Handles tab switching, initialization, and high-level command execution. |
-| **ConfigManager** | [scripts/configManager.js](scripts/configManager.js) | Manages user settings (mode, arcs, silent letters). Handles UI bindings for the settings tab and persistence. |
-| **SelectionManager** | [scripts/selectionManager.js](scripts/selectionManager.js) | Abstracts ONLYOFFICE document access. Converts selections into a structured JSON model and back. |
-| **LinguisticEngine** | [scripts/linguisticEngine.js](scripts/linguisticEngine.js) | The "brain" for French processing. Handles vowel/consonant detection, syllable splitting, and silent letter rules. |
-| **ColorizationEngine** | [scripts/colorizationEngine.js](scripts/colorizationEngine.js) | Bridge between linguistic analysis and visual formatting. Applies colors to the text model based on config. |
-| **OnlyDysStyles** | [scripts/styleManager.js](scripts/styleManager.js) | Specifically handles global document-wide formatting like the OpenDyslexic font, line height, and spacing. |
-| **OnlyDysDyslexia** | [scripts/dyslexia.js](scripts/dyslexia.js) | Implements the dyslexia simulation (scrambling letters) to help users empathize with dyslexic readers. |
-| **OnlyDysLogic** | [scripts/suggestionLogic.js](scripts/suggestionLogic.js) | Contains the algorithmic core for suggestions: phonetic coding, Levenshtein distance, and confusion classification. |
-| **OnlyDysUI** | [scripts/suggestionUI.js](scripts/suggestionUI.js) | Manages the dynamic creation of HTML elements for suggestions, including visual icons and read-aloud buttons. |
-| **Logger** | [scripts/logger.js](scripts/logger.js) | Provides centralized logging for debugging, with the ability to download logs via the "About" tab. |
-| **Pictogram Service** | [scripts/pictogramService.js](scripts/pictogramService.js) | Helper to fetch ARASAAC pictograms for words to provide visual aids. |
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```mermaid
-classDiagram
-    class AscPlugin {
-        <<Global: window.Asc.plugin>>
-        +init()
-        +button(id)
-        +callCommand(func)
-        +executeMethod(method, args)
-    }
-
-    class plugin_js {
-        <<File: scripts/plugin.js>>
-        +loadTab(tabName)
-        +initLinguisticsTab()
-        +applyLinguisticsToDocument()
-        +initSuggestionsTab()
-        +checkFont()
-    }
-
-    class ConfigManager {
-        <<File: scripts/configManager.js>>
-        +config
-        +init()
-        +bindUI()
-        +save()
-        +updatePreview()
-        +applyToDocument()
-    }
-
-    class SelectionManager {
-        <<File: scripts/selectionManager.js>>
-        +getCurrentSelectionModel()
-        +applyChanges(model)
-    }
-
-    class LinguisticEngine {
-        <<File: scripts/linguisticEngine.js>>
-        +analyzeWord(word)
-        +segmentPhonemes(word)
-        +segmentSyllables(word)
-        +detectSilentLetters(word)
-    }
-
-    class ColorizationEngine {
-        <<File: scripts/colorizationEngine.js>>
-        +palettes
-        +processModel(model, config)
-        +processRun(run, config, wordMap)
-    }
-
-    class OnlyDysStyles {
-        <<File: scripts/styleManager.js>>
-        +applyStyleToDocument()
-        +revertStyleInDocument()
-    }
-
-    class OnlyDysDyslexia {
-        <<File: scripts/dyslexia.js>>
-        +applyDyslexiaToDocument(options)
-        +processText(str, options)
-        +storeOriginal(text)
-    }
-
-    class OnlyDysLogic {
-        <<File: scripts/suggestionLogic.js>>
-        +loadDictionary()
-        +classerSuggestions(motSaisi, motPrecedent)
-        +classifyConfusion(motSaisi, suggestion)
-        +getPhoneticCode(word)
-    }
-
-    class OnlyDysUI {
-        <<File: scripts/suggestionUI.js>>
-        +displaySuggestions(suggestions, motSaisi)
-        +replaceCurrentWord(wordToInsert)
-    }
-
-    class Logger {
-        <<File: scripts/logger.js>>
-        +info(msg, data)
-        +error(msg, err)
-        +getLogs()
-    }
-
-    %% Interactions
-    plugin_js --> AscPlugin : Uses
-    plugin_js --> ConfigManager : Orchestrates
-    plugin_js --> OnlyDysStyles : Controls font/style
-    plugin_js --> OnlyDysDyslexia : Triggers simulation
-    plugin_js --> OnlyDysLogic : Calls suggestion logic
-    plugin_js --> OnlyDysUI : Updates suggestion UI
-    
-    ConfigManager --> SelectionManager : Fetches current text
-    ConfigManager --> ColorizationEngine : Colorizes preview
-    
-    SelectionManager --> AscPlugin : Executes commands in doc
-
-    ColorizationEngine --> LinguisticEngine : analyzed word tokens
-
-    OnlyDysUI --> OnlyDysLogic : Classifies confusions
-    OnlyDysUI --> AscPlugin : Pastes content
-
-    OnlyDysLogic --> Logger : Logs events
-    OnlyDysLogic --> getPictogramUrl : (scripts/pictogramService.js) Fetches icons
-
-    OnlyDysDyslexia --> AscPlugin : Replaces doc content
-```

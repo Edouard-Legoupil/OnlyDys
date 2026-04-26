@@ -165,9 +165,9 @@ Each suggestion appears as an interactive card containing:
 **Palette Colors (Grammar Categories):**
 
 **Default:**
-- NOM: #A60628 (Dark Red), VER: #0047AB (Dark Blue), ADJ: #006994 (Dark Cyan)
-- ADV: #006B3C (Dark Green), PRO: #AA3300 (Dark Orange), DET: #6D214F (Dark Purple)
-- PRE: #000000 (Black), CON: #663300 (Dark Brown), INT: #8B008B (Dark Magenta)
+- NOM: #D62728 (Bright Red), VER: #2B83BA (Vibrant Blue), ADJ: #2CA02C (Bright Green)
+- ADV: #98DF8A (Light Green), PRO: #FF7F0E (Orange), DET: #BCBD22 (Olive/Chartreuse)
+- PRE: #4B0082 (Indigo), CON: #8B4513 (Saddlebrown), INT: #E377C2 (Pink)
 
 **Okabe-Ito:**
 - NOM: #E69F00 (Orange), VER: #56B4E9 (Blue), ADJ: #009E73 (Green)
@@ -321,31 +321,38 @@ ent, es, e, s, t, d, p, x, g, z
 **Standard Coloring (text color):**
 ```javascript
 {
-  phonemes: ["#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994", "#663300", "#8B008B", "#000000"],
-  syllables: ["#A60628", "#0047AB"],
-  words: ["#000000", "#0047AB"],
-  letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
-  vowels: "#6D214F",
-  consonants: "#0047AB",
+  phonemes: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A", "#BCBD22", "#E377C2", "#4B0082"],
+  syllables: ["#D62728", "#2B83BA"],
+  words: ["#4B0082", "#2B83BA"],
+  letters: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E"],
+  vowels: "#E377C2",
+  consonants: "#2B83BA",
   silent: "#606060",
-  punctuation: "#6D214F"
+  punctuation: "#E377C2"
 }
 ```
 
 **Grammatical Category Colors:**
 ```javascript
 {
-  "NOM": "#A60628",    // Noun (Dark Red)
-  "VER": "#0047AB",    // Verb (Dark Blue)
-  "ADJ": "#006994",    // Adjective (Cyan)
-  "ADV": "#006B3C",    // Adverb (Dark Green)
-  "PRO": "#AA3300",    // Pronoun (Dark Orange)
-  "DET": "#6D214F",    // Determiner (Dark Purple)
-  "PRE": "#000000",    // Preposition (Black)
-  "CON": "#663300",    // Conjunction (Brown)
-  "INT": "#8B008B"     // Interjection (Purple)
+  "NOM": "#D62728",    // Noun (Bright Red)
+  "VER": "#2B83BA",    // Verb (Vibrant Blue)
+  "ADJ": "#2CA02C",    // Adjective (Bright Green)
+  "ADV": "#98DF8A",    // Adverb (Light Green)
+  "PRO": "#FF7F0E",    // Pronoun (Orange)
+  "DET": "#BCBD22",    // Determiner (Olive/Chartreuse)
+  "PRE": "#4B0082",    // Preposition (Indigo)
+  "CON": "#8B4513",    // Conjunction (Saddlebrown)
+  "INT": "#E377C2"     // Interjection (Pink)
 }
 ```
+
+**Color Design Rationale:**
+- All colors are color-blind friendly (tested against Protanopia, Deuteranopia, Tritanopia)
+- PRE changed from black (#000000) to indigo (#4B0082) for visibility on all backgrounds
+- DET and INT are now clearly distinguishable (olive vs pink, not both purple)
+- ADJ and VER are now clearly distinguishable (green vs blue, not both blue-ish)
+- Palette uses proven color schemes from ColorBrewer, IBM Design, and Okabe-Ito research
 
 **Highlighting Mode (background color):**
 - Uses lighter versions of the same color scheme

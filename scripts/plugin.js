@@ -47,90 +47,33 @@
             if (!isActive) return;
 
             if (mode === 'onthego') {
-                // Init scope for test
-                Asc.scope.check = "init";
-
-                // Updated Logic for Text Capture (Intermediate Sanity)
-                // Updated Logic for Text Capture (Intermediate Sanity + Introspection)
-                window.Asc.plugin.callCommand(function () {
-                    try {
-                        var oDocument = Api.GetDocument();
-                        if (!oDocument) return "CRASH: Api.GetDocument() returned null/undefined";
-
-                        // Check if GetSelection exists
-                        if (typeof oDocument.GetSelection !== 'function') {
-                            var docType = "unknown";
-                            try { docType = oDocument.GetClassType ? oDocument.GetClassType() : "no_GetClassType"; } catch (e) { }
-
-                            var keys = [];
-                            for (var k in oDocument) keys.push(k);
-
-                            // Deep Research: Check Api object itself
-                            var apiKeys = [];
-                            try { for (var k in Api) apiKeys.push(k); } catch (e) { }
-
-                            return "CRASH: GetSelection missing. DocType: " + docType + ". DocKeys: " + keys.slice(0, 20).join(',') + "... ApiKeys: " + apiKeys.slice(0, 20).join(',');
-                        }
-
-                        var oRange = oDocument.GetSelection();
-                        if (!oRange) return "NO_RANGE";
-
-                        var text = oRange.GetText();
-                        if (!text || text === "") {
-                            oRange.ExpandToWord();
-                            text = oRange.GetText();
-                            return "EXPANDED:" + (text || "EMPTY");
-                        }
-                        return "SELECTED:" + text;
-                    } catch (e) {
-                        return "CRASH:" + e.message;
-                    }
-                }, false, false, function (result) {
-                    if (window.logger) window.logger.info("Plugin.js: Capture result: " + result);
-
-                    if (result && typeof result === 'string') {
-                        if (result.startsWith("EXPANDED:") || result.startsWith("SELECTED:")) {
-                            var text = result.substring(result.indexOf(":") + 1);
-                            if (text !== "EMPTY") {
+                // Primary method: GetCurrentWord for on-the-go mode
+                window.Asc.plugin.executeMethod("GetCurrentWord", [], function (word) {
+                    if (window.logger) window.logger.info("GetCurrentWord result: " + word);
+                    
+                    if (word && typeof word === 'string' && word.trim().length > 0) {
+                        processSuggestions(word);
+                    } else {
+                        // Fallback to GetSelectedText if no word at cursor
+                        if (window.logger) window.logger.info("GetCurrentWord empty/failed. Trying GetSelectedText.");
+                        
+                        window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                            if (text && typeof text === 'string' && text.trim().length > 0) {
                                 processSuggestions(text);
-                            }
-                        } else if (result.startsWith("CRASH:")) {
-                            // Fallback for Markdown/Restricted modes where GetSelection is missing
-                            if (window.logger) window.logger.warn("Capture crashed (" + result + "). Falling back to GetCurrentWord/GetSelectedText.");
-
-                            // Attempt 1: GetCurrentWord (Better for on-the-go)
-                            window.Asc.plugin.executeMethod("GetCurrentWord", [], function (word) {
-                                if (word && typeof word === 'string' && word.trim().length > 0) {
-                                    if (window.logger) window.logger.info("Fallback: GetCurrentWord successful: " + word);
-                                    processSuggestions(word);
-                                } else {
-                                    // Attempt 2: GetSelectedText (Fallback to selection)
-                                    if (window.logger) window.logger.info("Fallback: GetCurrentWord failed/empty. Trying GetSelectedText.");
-
-                                    // One-time UI Warning only if BOTH fail to provide on-the-go experience,
-                                    // but effective check is if we are in onthego mode and can't get current word.
-                                    // If GetSelectedText works, user still has to select.
-                                    if (!suggestionService.hasWarnedRestrictedMode) {
-                                        suggestionService.hasWarnedRestrictedMode = true;
-                                        const container = document.getElementById('suggestions-container');
-                                        if (container) {
-                                            const warning = document.createElement('div');
-                                            warning.style.cssText = "background: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px; font-size: 12px;";
-                                            warning.innerHTML = "<strong>Detection Limitée</strong><br>Mode restreint : La détection automatique est limitée.<br>Si la détection au curseur échoue, sélectionnez le mot.";
-                                            container.prepend(warning);
-                                        }
+                            } else {
+                                // One-time UI Warning if both fail
+                                if (!suggestionService.hasWarnedRestrictedMode) {
+                                    suggestionService.hasWarnedRestrictedMode = true;
+                                    const container = document.getElementById('suggestions-container');
+                                    if (container) {
+                                        const warning = document.createElement('div');
+                                        warning.style.cssText = "background: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px; font-size: 12px;";
+                                        warning.innerHTML = "<strong>Détection Limitée</strong><br>Mode restreint : La détection automatique est limitée.<br>Si la détection échoue, sélectionnez le mot manuellement.";
+                                        container.prepend(warning);
                                     }
-
-                                    window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                                        if (text) {
-                                            processSuggestions(text);
-                                        }
-                                    });
                                 }
-                            });
-                        }
-                    } else if (result && result.text) {
-                        processSuggestions(result.text);
+                            }
+                        });
                     }
                 });
             } else {
@@ -479,15 +422,15 @@
     'use strict';
 
     const GRAMMAR_COLOR_MAP = {
-        'NOM': '#A60628',
-        'VER': '#0047AB',
-        'ADJ': '#006994',
-        'ADV': '#006B3C',
-        'PRO': '#AA3300',
-        'DET': '#6D214F',
-        'PRE': '#000000',
-        'CON': '#663300',
-        'INT': '#8B008B',
+        'NOM': '#D62728',
+        'VER': '#2B83BA',
+        'ADJ': '#2CA02C',
+        'ADV': '#98DF8A',
+        'PRO': '#FF7F0E',
+        'DET': '#BCBD22',
+        'PRE': '#4B0082',
+        'CON': '#8B4513',
+        'INT': '#E377C2',
     };
 
     function displayColorLegend() {
@@ -521,39 +464,39 @@
     const ColorizationEngine = {
         palettes: {
             phonemes: [
-                "#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994",
-                "#663300", "#8B008B", "#000000"
+                "#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A",
+                "#BCBD22", "#E377C2", "#4B0082"
             ],
-            syllables: ["#A60628", "#0047AB"],
-            words: ["#000000", "#0047AB"],
-            lines: ["#000000", "#0047AB"],
-            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
-            vowels: "#6D214F",
-            consonants: "#0047AB",
+            syllables: ["#D62728", "#2B83BA"],
+            words: ["#4B0082", "#2B83BA"],
+            lines: ["#4B0082", "#2B83BA"],
+            letters: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E"],
+            vowels: "#E377C2",
+            consonants: "#2B83BA",
             silent: "#606060",
-            punctuation: "#6D214F",
+            punctuation: "#E377C2",
             grammar: {
-                'NOM': '#A60628', 'VER': '#0047AB', 'ADJ': '#006994', 'ADV': '#006B3C',
-                'PRO': '#AA3300', 'DET': '#6D214F', 'PRE': '#000000', 'CON': '#663300', 'INT': '#8B008B'
+                'NOM': '#D62728', 'VER': '#2B83BA', 'ADJ': '#2CA02C', 'ADV': '#98DF8A',
+                'PRO': '#FF7F0E', 'DET': '#BCBD22', 'PRE': '#4B0082', 'CON': '#8B4513', 'INT': '#E377C2'
             }
         },
 
         highlightPalettes: {
             phonemes: [
-                "#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC", "#E6F9FF",
-                "#F5E6D3", "#F2E6FF", "#F0F0F0"
+                "#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6", "#E6FFE6",
+                "#FFFFE6", "#FFE6F5", "#E6E6FF"
             ],
-            syllables: ["#FFE6E6", "#E6F2FF"],
-            words: ["#F0F0F0", "#E6F2FF"],
-            lines: ["#F0F0F0", "#E6F2FF"],
-            letters: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC"],
-            vowels: "#F2E6FF",
-            consonants: "#E6F2FF",
+            syllables: ["#FFEEEE", "#E6F5FF"],
+            words: ["#E6E6FF", "#E6F5FF"],
+            lines: ["#E6E6FF", "#E6F5FF"],
+            letters: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6"],
+            vowels: "#FFE6F5",
+            consonants: "#E6F5FF",
             silent: "#F0F0F0",
-            punctuation: "#F2E6FF",
+            punctuation: "#FFE6F5",
             grammar: {
-                'NOM': '#FFE6E6', 'VER': '#E6F2FF', 'ADJ': '#E6F9FF', 'ADV': '#E6F9E6',
-                'PRO': '#FFE6CC', 'DET': '#F2E6FF', 'PRE': '#F0F0F0', 'CON': '#F5E6D3', 'INT': '#F2E6FF'
+                'NOM': '#FFEEEE', 'VER': '#E6F5FF', 'ADJ': '#E6FFEE', 'ADV': '#E6FFE6',
+                'PRO': '#FFECE6', 'DET': '#FFFFE6', 'PRE': '#E6E6FF', 'CON': '#FFE6D3', 'INT': '#FFE6F5'
             }
         },
 
@@ -798,6 +741,7 @@
         initDyslexiaTab();
         const styleToggle = document.getElementById('toggle-global-style');
         const styleStatus = document.getElementById('global-style-status');
+        const fontSelectionContainer = document.getElementById('font-selection-container');
 
         if (styleToggle) {
             styleToggle.addEventListener('change', function (e) {
@@ -806,10 +750,42 @@
                     styleStatus.textContent = isEnabled ? "Activé" : "Désactivé";
                     styleStatus.style.color = isEnabled ? "green" : "inherit";
                 }
-                if (window.OnlyDysStyles) {
-                    if (isEnabled) window.OnlyDysStyles.applyStyleToDocument();
-                    else window.OnlyDysStyles.revertStyleInDocument();
+                
+                // Show/hide font selection based on toggle state
+                if (fontSelectionContainer) {
+                    fontSelectionContainer.style.display = isEnabled ? "block" : "none";
                 }
+                
+                if (window.OnlyDysStyles) {
+                    if (isEnabled) {
+                        // Get selected font from radio buttons
+                        const fontRadios = document.getElementsByName('dys-font');
+                        let selectedFont = "OpenDyslexic";
+                        for (let i = 0; i < fontRadios.length; i++) {
+                            if (fontRadios[i].checked) {
+                                selectedFont = fontRadios[i].value;
+                                break;
+                            }
+                        }
+                        window.OnlyDysStyles.setCurrentFont(selectedFont);
+                        window.OnlyDysStyles.applyStyleToDocument(selectedFont);
+                    } else {
+                        window.OnlyDysStyles.revertStyleInDocument();
+                    }
+                }
+            });
+        }
+
+        // Handle font selection changes
+        const fontRadios = document.getElementsByName('dys-font');
+        if (fontRadios && fontRadios.length > 0) {
+            fontRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.checked && window.OnlyDysStyles && styleToggle && styleToggle.checked) {
+                        window.OnlyDysStyles.setCurrentFont(this.value);
+                        window.OnlyDysStyles.applyStyleToDocument(this.value);
+                    }
+                });
             });
         }
 
@@ -1172,15 +1148,15 @@
                     // Inline ColorizationEngine (no eval needed)
                     var ColorizationEngine = {
                         palettes: {
-                            phonemes: ["#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994", "#663300", "#8B008B", "#000000"],
-                            syllables: ["#A60628", "#0047AB"],
-                            words: ["#000000", "#0047AB"],
-                            lines: ["#000000", "#0047AB"],
-                            vowels: "#6D214F", consonants: "#0047AB", silent: "#606060", punctuation: "#6D214F",
-                            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
+                            phonemes: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A", "#BCBD22", "#E377C2", "#4B0082"],
+                            syllables: ["#D62728", "#2B83BA"],
+                            words: ["#4B0082", "#2B83BA"],
+                            lines: ["#4B0082", "#2B83BA"],
+                            vowels: "#E377C2", consonants: "#2B83BA", silent: "#606060", punctuation: "#E377C2",
+                            letters: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E"],
                             grammar: {
-                                'NOM': '#A60628', 'VER': '#0047AB', 'ADJ': '#006994', 'ADV': '#006B3C',
-                                'PRO': '#AA3300', 'DET': '#6D214F', 'PRE': '#000000', 'CON': '#663300', 'INT': '#8B008B'
+                                'NOM': '#D62728', 'VER': '#2B83BA', 'ADJ': '#2CA02C', 'ADV': '#98DF8A',
+                                'PRO': '#FF7F0E', 'DET': '#BCBD22', 'PRE': '#4B0082', 'CON': '#8B4513', 'INT': '#E377C2'
                             }
                         },
                         processModel: function (model, config) {
@@ -1737,13 +1713,19 @@
         window.Asc.plugin.callCommand(function () {
             try {
                 var oDocument = Api.GetDocument();
-                // Check valid object
-                if (!oDocument || typeof oDocument.GetSelection !== 'function') {
+                // Check valid object - use GetRangeBySelect as fallback
+                var oRange = null;
+                if (typeof oDocument.GetSelection === 'function') {
+                    oRange = oDocument.GetSelection();
+                } else if (typeof oDocument.GetRangeBySelect === 'function') {
+                    oRange = oDocument.GetRangeBySelect();
+                } else if (typeof oDocument.GetRange === 'function') {
+                    oRange = oDocument.GetRange();
+                }
+                
+                if (!oRange) {
                     return JSON.stringify({ status: "crash", error: "GetSelection missing" });
                 }
-
-                var oRange = oDocument.GetSelection();
-                if (!oRange) return JSON.stringify({ status: "no_range" });
 
                 var currentText = oRange.GetText();
 
@@ -1782,39 +1764,6 @@
             }
         });
     };
-
-    // Updated Logic for Text Capture (Intermediate Sanity)
-    window.Asc.plugin.callCommand(function () {
-        try {
-            var oDocument = Api.GetDocument();
-            var oRange = oDocument.GetSelection();
-
-            if (!oRange) return "NO_RANGE";
-
-            // Just try to get text simple first
-            var text = oRange.GetText();
-            if (!text || text === "") {
-                oRange.ExpandToWord();
-                text = oRange.GetText();
-                return "EXPANDED:" + (text || "EMPTY");
-            }
-            return "SELECTED:" + text;
-        } catch (e) {
-            return "CRASH:" + e.message;
-        }
-    }, false, true, function (result) {
-        if (window.logger) window.logger.info("Plugin.js: Capture result: " + result);
-
-        // Parse manual string format
-        if (result && typeof result === 'string') {
-            if (result.startsWith("EXPANDED:") || result.startsWith("SELECTED:")) {
-                var text = result.substring(result.indexOf(":") + 1);
-                if (text !== "EMPTY") {
-                    processSuggestions(text);
-                }
-            }
-        }
-    });
 
     window.Asc.plugin.onCommandCallback = function (result) {
         if (window.logger) window.logger.info("onCommandCallback fired. Result: " + JSON.stringify(result));

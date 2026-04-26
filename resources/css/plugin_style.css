@@ -300,13 +300,16 @@ button:hover {
     vertical-align: middle;
 }
 
-.red { background-color: #A60628; } /* Dark Red (NOM / Syllable 1) */
-.orange { background-color: #AA3300; } /* Dark Orange (PRO / Phoneme 4) */
-.purple { background-color: #6D214F; } /* Dark Purple (DET / Vowels) */
-.vermilion { background-color: #A60628; } /* Dark Red (Alias) */
-.blue { background-color: #0047AB; } /* Dark Blue (VER / Alternation 2) */
-.green { background-color: #006B3C; } /* Dark Green (ADV) */
-.cyan { background-color: #006994; } /* Dark Cyan (ADJ) */
+.red { background-color: #D62728; } /* Bright Red (NOM / Syllable 1) */
+.orange { background-color: #FF7F0E; } /* Orange (PRO / Phoneme 4) */
+.olive { background-color: #BCBD22; } /* Olive/Chartreuse (DET) */
+.vermilion { background-color: #D62728; } /* Bright Red (Alias) */
+.blue { background-color: #2B83BA; } /* Vibrant Blue (VER / Alternation 2) */
+.lime { background-color: #98DF8A; } /* Light Green (ADV) */
+.teal { background-color: #2CA02C; } /* Bright Green (ADJ) */
+.pink { background-color: #E377C2; } /* Pink (INT / Vowels) */
+.indigo { background-color: #4B0082; } /* Indigo (PRE) */
+.brown { background-color: #8B4513; } /* Saddlebrown (CON) */
 .grey { background-color: #606060; } /* Dark Grey (Silent) */
 
 /* Font definitions */

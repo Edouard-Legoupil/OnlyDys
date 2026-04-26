@@ -197,7 +197,7 @@
             );
 
             const shapes = [];
-            const palette = colorPalette || ['#A60628', '#0047AB'];
+            const palette = colorPalette || ['#D62728', '#2B83BA'];
 
             positions.forEach((pos, index) => {
                 const color = palette[index % palette.length];
@@ -332,9 +332,12 @@
                             return { status: "ERROR", message: "No document" };
                         }
 
-                        var oSelection = oDocument.GetSelection();
+                        // Use GetRangeBySelect as fallback since GetSelection is not available in newer APIs
+                        var oSelection = (typeof oDocument.GetSelection === 'function') ? oDocument.GetSelection() : 
+                                    ((typeof oDocument.GetRangeBySelect === 'function') ? oDocument.GetRangeBySelect() : 
+                                    ((typeof oDocument.GetRange === 'function') ? oDocument.GetRange() : null));
                         if (!oSelection) {
-                            oSelection = oDocument.GetRange();
+                            return { status: "ERROR", message: "No selection range available" };
                         }
 
                         // Get the paragraph containing the selection
@@ -429,7 +432,7 @@
                 return textRuns;
             }
 
-            const palette = colorPalette || ['#A60628', '#0047AB'];
+            const palette = colorPalette || ['#D62728', '#2B83BA'];
             const modifiedRuns = [];
 
             textRuns.forEach(run => {
@@ -535,7 +538,7 @@
                 return [{ text: text, formatting: {} }];
             }
 
-            const palette = colorPalette || ['#A60628', '#0047AB'];
+            const palette = colorPalette || ['#D62728', '#2B83BA'];
             const runs = [];
             
             let currentPos = 0;
@@ -614,7 +617,7 @@
          * @returns {string} HTML string
          */
         renderArcPreviewHTML: function (text, syllables, colorPalette) {
-            const palette = colorPalette || ['#A60628', '#0047AB'];
+            const palette = colorPalette || ['#D62728', '#2B83BA'];
             let html = '';
             
             let currentPos = 0;

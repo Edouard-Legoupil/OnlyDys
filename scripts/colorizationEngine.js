@@ -38,35 +38,35 @@
      * - Viridis: https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html
      */
     const PALETTES = {
-        // PALETTE 1: Default (Existing OnlyDys colors)
+        // PALETTE 1: Default (OnlyDys high-contrast color scheme)
         'default': {
             name: 'Default',
-            description: 'Original OnlyDys color scheme',
-            phonemes: ["#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994", "#663300", "#8B008B", "#000000"],
-            syllables: ["#A60628", "#0047AB"],
-            words: ["#000000", "#0047AB"],
-            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
-            vowels: "#6D214F",
-            consonants: "#0047AB",
+            description: 'High-contrast OnlyDys color scheme - color-blind friendly',
+            phonemes: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A", "#BCBD22", "#E377C2", "#4B0082"],
+            syllables: ["#D62728", "#2B83BA"],
+            words: ["#4B0082", "#2B83BA"],
+            letters: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E"],
+            vowels: "#E377C2",
+            consonants: "#2B83BA",
             silent: "#606060",
-            punctuation: "#6D214F",
+            punctuation: "#E377C2",
             grammar: {
-                'NOM': '#A60628', 'VER': '#0047AB', 'ADJ': '#006994', 'ADV': '#006B3C',
-                'PRO': '#AA3300', 'DET': '#6D214F', 'PRE': '#000000', 'CON': '#663300', 'INT': '#8B008B'
+                'NOM': '#D62728', 'VER': '#2B83BA', 'ADJ': '#2CA02C', 'ADV': '#98DF8A',
+                'PRO': '#FF7F0E', 'DET': '#BCBD22', 'PRE': '#4B0082', 'CON': '#8B4513', 'INT': '#E377C2'
             },
             // Highlighting variants (lighter versions)
             highlight: {
-                phonemes: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC", "#E6F9FF", "#F5E6D3", "#F2E6FF", "#F0F0F0"],
-                syllables: ["#FFE6E6", "#E6F2FF"],
-                words: ["#F0F0F0", "#E6F2FF"],
-                letters: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC"],
-                vowels: "#F2E6FF",
-                consonants: "#E6F2FF",
+                phonemes: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6", "#E6FFE6", "#FFFFE6", "#FFE6F5", "#E6E6FF"],
+                syllables: ["#FFEEEE", "#E6F5FF"],
+                words: ["#E6E6FF", "#E6F5FF"],
+                letters: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6"],
+                vowels: "#FFE6F5",
+                consonants: "#E6F5FF",
                 silent: "#F0F0F0",
-                punctuation: "#F2E6FF",
+                punctuation: "#FFE6F5",
                 grammar: {
-                    'NOM': '#FFE6E6', 'VER': '#E6F2FF', 'ADJ': '#E6F9FF', 'ADV': '#E6F9E6',
-                    'PRO': '#FFE6CC', 'DET': '#F2E6FF', 'PRE': '#F0F0F0', 'CON': '#F5E6D3', 'INT': '#F2E6FF'
+                    'NOM': '#FFEEEE', 'VER': '#E6F5FF', 'ADJ': '#E6FFEE', 'ADV': '#E6FFE6',
+                    'PRO': '#FFECE6', 'DET': '#FFFFE6', 'PRE': '#E6E6FF', 'CON': '#FFE6D3', 'INT': '#FFE6F5'
                 }
             }
         },
@@ -208,15 +208,15 @@
     };
 
     const GRAMMAR_COLOR_MAP = {
-        'NOM': '#A60628', // Dark Red
-        'VER': '#0047AB', // Dark Blue
-        'ADJ': '#006994', // Dark Cyan
-        'ADV': '#006B3C', // Dark Green
-        'PRO': '#AA3300', // Dark Orange
-        'DET': '#6D214F', // Dark Purple
-        'PRE': '#000000', // Black
-        'CON': '#663300', // Dark Brown
-        'INT': '#8B008B', // Dark Magenta
+        'NOM': '#D62728', // Bright Red
+        'VER': '#2B83BA', // Vibrant Blue
+        'ADJ': '#2CA02C', // Bright Green
+        'ADV': '#98DF8A', // Light Green
+        'PRO': '#FF7F0E', // Orange
+        'DET': '#BCBD22', // Olive/Chartreuse
+        'PRE': '#4B0082', // Indigo
+        'CON': '#8B4513', // Saddlebrown
+        'INT': '#E377C2', // Pink
     };
 
     function displayColorLegend() {

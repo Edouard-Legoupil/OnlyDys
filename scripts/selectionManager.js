@@ -15,7 +15,14 @@
             return new Promise((resolve, reject) => {
                 window.Asc.plugin.callCommand(function () {
                     var oDocument = Api.GetDocument();
-                    var oRange = oDocument.GetSelection();
+                    // Use GetRangeBySelect as fallback since GetSelection is not available in newer APIs
+                    var oRange = (typeof oDocument.GetSelection === 'function') ? oDocument.GetSelection() : 
+                                ((typeof oDocument.GetRangeBySelect === 'function') ? oDocument.GetRangeBySelect() : 
+                                ((typeof oDocument.GetRange === 'function') ? oDocument.GetRange() : null));
+                    
+                    if (!oRange) {
+                        return null;
+                    }
 
                     // Simple model Builder
                     var model = { paragraphs: [] };
@@ -81,7 +88,10 @@
                 window.Asc.plugin.callCommand(function () {
                     var model = Asc.scope.model;
                     var oDocument = Api.GetDocument();
-                    var oSelection = oDocument.GetSelection(); // Current selection
+                    // Use GetRangeBySelect as fallback since GetSelection is not available in newer APIs
+                    var oSelection = (typeof oDocument.GetSelection === 'function') ? oDocument.GetSelection() : 
+                                    ((typeof oDocument.GetRangeBySelect === 'function') ? oDocument.GetRangeBySelect() : 
+                                    ((typeof oDocument.GetRange === 'function') ? oDocument.GetRange() : null));
 
                     // Safety: Delete content then insert?
                     // Or iterate and replace?

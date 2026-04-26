@@ -192,8 +192,8 @@ describe('ArcRenderer', function () {
 
         it('should use default palette when none provided', function () {
             const runs = engine.createTextRunsWithArcs("test", ["tes", "t"], []);
-            expect(runs[0].formatting.arcColor).to.equal("#A60628");
-            expect(runs[1].formatting.arcColor).to.equal("#0047AB");
+            expect(runs[0].formatting.arcColor).to.equal("#D62728");
+            expect(runs[1].formatting.arcColor).to.equal("#2B83BA");
         });
 
         it('should handle word with multiple syllables', function () {
