@@ -6,7 +6,8 @@
             mode: 'syllables',
             showArcs: false,
             highlightSilent: false,
-            suggestionDebounceMs: 150  // Default debounce delay in milliseconds
+            suggestionDebounceMs: 150,  // Default debounce delay in milliseconds
+            colorPalette: 'default'     // Color palette: 'default', 'okabeIto', 'tolsQualitative', 'viridis', 'highContrast'
         },
 
         init: function () {
@@ -15,7 +16,17 @@
             if (saved) {
                 try {
                     this.config = JSON.parse(saved);
+                    // Ensure colorPalette exists in loaded config
+                    if (!this.config.colorPalette) {
+                        this.config.colorPalette = 'default';
+                        this.save();
+                    }
                 } catch (e) { console.error(e); }
+            }
+
+            // Initialize color palette in ColorizationEngine if available
+            if (window.ColorizationEngine && window.ColorizationEngine.initPaletteFromConfig) {
+                window.ColorizationEngine.initPaletteFromConfig();
             }
 
             this.bindUI();
@@ -28,6 +39,7 @@
             const silentCheck = document.getElementById('opt-silent');
             const applyBtn = document.getElementById('btn-apply-ling');
             const resetBtn = document.getElementById('btn-reset-ling');
+            const paletteSelector = document.getElementById('palette-selector');
 
             if (radios.length === 0) return; // UI not loaded
 
@@ -41,6 +53,11 @@
             }
             if (arcsCheck) arcsCheck.checked = this.config.showArcs;
             if (silentCheck) silentCheck.checked = this.config.highlightSilent;
+            
+            // Set palette selector value
+            if (paletteSelector) {
+                paletteSelector.value = this.config.colorPalette || 'default';
+            }
 
             // Listeners
             radios.forEach(r => {
@@ -67,6 +84,28 @@
                     this.config.highlightSilent = e.target.checked;
                     this.save();
                     this.updatePreview();
+                });
+            }
+
+            // Palette selector binding
+            if (paletteSelector) {
+                paletteSelector.addEventListener('change', (e) => {
+                    const paletteName = e.target.value;
+                    this.config.colorPalette = paletteName;
+                    this.save();
+                    
+                    // Update ColorizationEngine
+                    if (window.ColorizationEngine && window.ColorizationEngine.setCurrentPalette) {
+                        window.ColorizationEngine.setCurrentPalette(paletteName);
+                    }
+                    
+                    // Update legend and preview
+                    this.updateColorLegend();
+                    this.updatePreview();
+                    
+                    if (window.logger) {
+                        window.logger.info(`Palette changed to: ${paletteName}`);
+                    }
                 });
             }
 
@@ -119,9 +158,21 @@
                 const opt = document.getElementById('opt-container-grammar');
                 if (opt) opt.style.display = 'block';
                 // Populate legend
-                if (window.OnlyDysStyles && window.OnlyDysStyles.displayColorLegend) {
-                    window.OnlyDysStyles.displayColorLegend();
-                }
+                this.updateColorLegend();
+            }
+        },
+
+        /**
+         * Update the color legend to show current palette
+         */
+        updateColorLegend: function () {
+            // Trigger legend update for grammar mode
+            if (window.ColorizationEngine && window.ColorizationEngine.displayColorLegend) {
+                window.ColorizationEngine.displayColorLegend();
+            }
+            // Also update if OnlyDysStyles has its own legend
+            if (window.OnlyDysStyles && window.OnlyDysStyles.displayColorLegend) {
+                window.OnlyDysStyles.displayColorLegend();
             }
         },
 

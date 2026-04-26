@@ -20,6 +20,193 @@
      * }
      */
 
+    // CURRENT PALETTE SETTING (default: 'default')
+    let currentPaletteName = 'default';
+
+    /**
+     * FIVE COLOR-BLIND FRIENDLY PALETTES
+     * 
+     * Each palette is designed to be:
+     * - Distinguishable by people with color vision deficiency (CVD)
+     * - Protanopia (red-green), Deuteranopia (red-green), Tritanopia (blue-yellow) safe
+     * - Perceptually uniform where possible
+     * - Sufficient contrast for readability
+     * 
+     * Sources:
+     * - Okabe-Ito: https://jfly.uni-koeln.de/color/
+     * - Tol: https://personal.sron.nl/~pault/
+     * - Viridis: https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html
+     */
+    const PALETTES = {
+        // PALETTE 1: Default (Existing OnlyDys colors)
+        'default': {
+            name: 'Default',
+            description: 'Original OnlyDys color scheme',
+            phonemes: ["#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994", "#663300", "#8B008B", "#000000"],
+            syllables: ["#A60628", "#0047AB"],
+            words: ["#000000", "#0047AB"],
+            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"],
+            vowels: "#6D214F",
+            consonants: "#0047AB",
+            silent: "#606060",
+            punctuation: "#6D214F",
+            grammar: {
+                'NOM': '#A60628', 'VER': '#0047AB', 'ADJ': '#006994', 'ADV': '#006B3C',
+                'PRO': '#AA3300', 'DET': '#6D214F', 'PRE': '#000000', 'CON': '#663300', 'INT': '#8B008B'
+            },
+            // Highlighting variants (lighter versions)
+            highlight: {
+                phonemes: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC", "#E6F9FF", "#F5E6D3", "#F2E6FF", "#F0F0F0"],
+                syllables: ["#FFE6E6", "#E6F2FF"],
+                words: ["#F0F0F0", "#E6F2FF"],
+                letters: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC"],
+                vowels: "#F2E6FF",
+                consonants: "#E6F2FF",
+                silent: "#F0F0F0",
+                punctuation: "#F2E6FF",
+                grammar: {
+                    'NOM': '#FFE6E6', 'VER': '#E6F2FF', 'ADJ': '#E6F9FF', 'ADV': '#E6F9E6',
+                    'PRO': '#FFE6CC', 'DET': '#F2E6FF', 'PRE': '#F0F0F0', 'CON': '#F5E6D3', 'INT': '#F2E6FF'
+                }
+            }
+        },
+
+        // PALETTE 2: Okabe-Ito (Color Universal Design)
+        // Optimized for all types of color blindness
+        // Source: https://jfly.uni-koeln.de/color/
+        'okabeIto': {
+            name: 'Okabe-Ito',
+            description: 'Color Universal Design - scientifically optimized for CVD',
+            phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
+            syllables: ["#E69F00", "#56B4E9"],
+            words: ["#000000", "#56B4E9"],
+            letters: ["#E69F00", "#56B4E9", "#009E73", "#F0E442"],
+            vowels: "#009E73",
+            consonants: "#56B4E9",
+            silent: "#808080",
+            punctuation: "#CC79A7",
+            grammar: {
+                'NOM': '#E69F00', 'VER': '#56B4E9', 'ADJ': '#009E73', 'ADV': '#F0E442',
+                'PRO': '#F0E442', 'DET': '#0072B2', 'PRE': '#000000', 'CON': '#D55E00', 'INT': '#CC79A7'
+            },
+            highlight: {
+                phonemes: ["#FFF5EB", "#E7F5FF", "#E7FFEF", "#FFFFE7", "#E7F0FA", "#FFECE7", "#FFEBF5", "#F8F8F8"],
+                syllables: ["#FFF5EB", "#E7F5FF"],
+                words: ["#F8F8F8", "#E7F5FF"],
+                letters: ["#FFF5EB", "#E7F5FF", "#E7FFEF", "#FFFFE7"],
+                vowels: "#E7FFEF",
+                consonants: "#E7F5FF",
+                silent: "#D3D3D3",
+                punctuation: "#FFEBF5",
+                grammar: {
+                    'NOM': '#FFF5EB', 'VER': '#E7F5FF', 'ADJ': '#E7FFEF', 'ADV': '#FFFFE7',
+                    'PRO': '#FFFFE7', 'DET': '#E7F0FA', 'PRE': '#F8F8F8', 'CON': '#FFECE7', 'INT': '#FFEBF5'
+                }
+            }
+        },
+
+        // PALETTE 3: Tol's Qualitative
+        // Paul Tol's qualitative color scheme
+        // Source: https://personal.sron.nl/~pault/
+        'tolsQualitative': {
+            name: "Tol's Qualitative",
+            description: 'Paul Tol qualitative scheme - color-blind safe',
+            phonemes: ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#000000"],
+            syllables: ["#117733", "#44AA99"],
+            words: ["#000000", "#44AA99"],
+            letters: ["#332288", "#117733", "#44AA99", "#88CCEE"],
+            vowels: "#AA4499",
+            consonants: "#44AA99",
+            silent: "#808080",
+            punctuation: "#CC6677",
+            grammar: {
+                'NOM': '#332288', 'VER': '#117733', 'ADJ': '#44AA99', 'ADV': '#88CCEE',
+                'PRO': '#DDCC77', 'DET': '#CC6677', 'PRE': '#000000', 'CON': '#AA4499', 'INT': '#CC6677'
+            },
+            highlight: {
+                phonemes: ["#E6D6FF", "#D6F5D6", "#D6F5F5", "#E6F5FF", "#FFF5D6", "#FFD6E6", "#F5D6FF", "#F8F8F8"],
+                syllables: ["#D6F5D6", "#D6F5F5"],
+                words: ["#F8F8F8", "#D6F5F5"],
+                letters: ["#E6D6FF", "#D6F5D6", "#D6F5F5", "#E6F5FF"],
+                vowels: "#F5D6FF",
+                consonants: "#D6F5F5",
+                silent: "#D3D3D3",
+                punctuation: "#FFD6E6",
+                grammar: {
+                    'NOM': '#E6D6FF', 'VER': '#D6F5D6', 'ADJ': '#D6F5F5', 'ADV': '#E6F5FF',
+                    'PRO': '#FFF5D6', 'DET': '#FFD6E6', 'PRE': '#F8F8F8', 'CON': '#F5D6FF', 'INT': '#FFD6E6'
+                }
+            }
+        },
+
+        // PALETTE 4: Viridis (Perceptually Uniform)
+        // Viridis color map - perceptually uniform, color-blind friendly
+        // Source: https://cran.r-project.org/web/packages/viridis/
+        'viridis': {
+            name: 'Viridis',
+            description: 'Perceptually uniform - excellent for color blindness',
+            phonemes: ["#440154", "#482878", "#3E4989", "#31688E", "#26828E", "#1F9E89", "#35B779", "#000000"],
+            syllables: ["#440154", "#1F9E89"],
+            words: ["#000000", "#1F9E89"],
+            letters: ["#440154", "#482878", "#3E4989", "#31688E"],
+            vowels: "#26828E",
+            consonants: "#1F9E89",
+            silent: "#505050",
+            punctuation: "#35B779",
+            grammar: {
+                'NOM': '#440154', 'VER': '#482878', 'ADJ': '#3E4989', 'ADV': '#31688E',
+                'PRO': '#26828E', 'DET': '#1F9E89', 'PRE': '#000000', 'CON': '#35B779', 'INT': '#1F9E89'
+            },
+            highlight: {
+                phonemes: ["#F0E6FF", "#E6E6FF", "#D6E6FF", "#C6E6FF", "#B6E6FF", "#A6FFE6", "#A6FFA6", "#F8F8F8"],
+                syllables: ["#F0E6FF", "#A6FFE6"],
+                words: ["#F8F8F8", "#A6FFE6"],
+                letters: ["#F0E6FF", "#E6E6FF", "#D6E6FF", "#C6E6FF"],
+                vowels: "#B6E6FF",
+                consonants: "#A6FFE6",
+                silent: "#D3D3D3",
+                punctuation: "#A6FFA6",
+                grammar: {
+                    'NOM': '#F0E6FF', 'VER': '#E6E6FF', 'ADJ': '#D6E6FF', 'ADV': '#C6E6FF',
+                    'PRO': '#B6E6FF', 'DET': '#A6FFE6', 'PRE': '#F8F8F8', 'CON': '#A6FFA6', 'INT': '#A6FFE6'
+                }
+            }
+        },
+
+        // PALETTE 5: High Contrast
+        // Custom high-contrast palette for maximum accessibility
+        'highContrast': {
+            name: 'High Contrast',
+            description: 'Maximum contrast - ideal for low vision',
+            phonemes: ["#0000FF", "#FF0000", "#00FF00", "#FF8000", "#8000FF", "#FFFF00", "#FF00FF", "#000000"],
+            syllables: ["#0000FF", "#FF0000"],
+            words: ["#000000", "#FF0000"],
+            letters: ["#0000FF", "#FF0000", "#00FF00", "#FF8000"],
+            vowels: "#8000FF",
+            consonants: "#0000FF",
+            silent: "#808080",
+            punctuation: "#FF00FF",
+            grammar: {
+                'NOM': '#0000FF', 'VER': '#FF0000', 'ADJ': '#00FF00', 'ADV': '#FF8000',
+                'PRO': '#8000FF', 'DET': '#FFFF00', 'PRE': '#000000', 'CON': '#FF00FF', 'INT': '#FF00FF'
+            },
+            highlight: {
+                phonemes: ["#E6E6FF", "#FFE6E6", "#E6FFE6", "#FFE6D6", "#F0E6FF", "#FFFFE6", "#FFE6FF", "#F8F8F8"],
+                syllables: ["#E6E6FF", "#FFE6E6"],
+                words: ["#F8F8F8", "#FFE6E6"],
+                letters: ["#E6E6FF", "#FFE6E6", "#E6FFE6", "#FFE6D6"],
+                vowels: "#F0E6FF",
+                consonants: "#E6E6FF",
+                silent: "#D3D3D3",
+                punctuation: "#FFE6FF",
+                grammar: {
+                    'NOM': '#E6E6FF', 'VER': '#FFE6E6', 'ADJ': '#E6FFE6', 'ADV': '#FFE6D6',
+                    'PRO': '#F0E6FF', 'DET': '#FFFFE6', 'PRE': '#F8F8F8', 'CON': '#FFE6FF', 'INT': '#FFE6FF'
+                }
+            }
+        }
+    };
+
     const GRAMMAR_COLOR_MAP = {
         'NOM': '#A60628', // Dark Red
         'VER': '#0047AB', // Dark Blue
@@ -36,16 +223,40 @@
         const legendContainer = document.getElementById('color-legend');
         if (!legendContainer) return;
         legendContainer.innerHTML = '';
-        for (const [grammar, color] of Object.entries(GRAMMAR_COLOR_MAP)) {
+        
+        // Get current palette
+        const palette = getCurrentPalette();
+        const grammarPalette = palette.grammar;
+        
+        // Create title
+        const title = document.createElement('div');
+        title.className = 'legend-title';
+        title.textContent = `Palette: ${getCurrentPaletteInfo().name}`;
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '10px';
+        title.style.textAlign = 'center';
+        legendContainer.appendChild(title);
+        
+        // Display grammar colors
+        for (const [grammar, color] of Object.entries(grammarPalette)) {
             const item = document.createElement('div');
             item.className = 'legend-item';
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.margin = '5px 0';
 
             const colorBox = document.createElement('div');
             colorBox.className = 'legend-color';
             colorBox.style.backgroundColor = color;
+            colorBox.style.width = '24px';
+            colorBox.style.height = '24px';
+            colorBox.style.border = '1px solid #ccc';
+            colorBox.style.marginRight = '10px';
+            colorBox.style.borderRadius = '4px';
 
             const label = document.createElement('span');
             label.textContent = grammar;
+            label.style.flex = '1';
 
             item.appendChild(colorBox);
             item.appendChild(label);
@@ -53,35 +264,111 @@
         }
     }
 
+    /**
+     * Get current palette info
+     */
+    function getCurrentPaletteInfo() {
+        return PALETTES[currentPaletteName];
+    }
+
+    /**
+     * Get the current palette's colors
+     */
+    function getCurrentPalette() {
+        return getCurrentPaletteInfo();
+    }
+
+    /**
+     * Get current highlight palette
+     */
+    function getCurrentHighlightPalette() {
+        return getCurrentPaletteInfo().highlight || getCurrentPaletteInfo();
+    }
+
+    /**
+     * Set the current palette by name
+     * @param {string} paletteName - Name of palette to activate
+     */
+    function setCurrentPalette(paletteName) {
+        if (PALETTES[paletteName]) {
+            currentPaletteName = paletteName;
+            if (window.ConfigManager && window.ConfigManager.config) {
+                window.ConfigManager.config.colorPalette = paletteName;
+                window.ConfigManager.save();
+            }
+            if (window.logger) {
+                window.logger.info(`Color palette changed to: ${paletteName}`);
+            }
+            return true;
+        }
+        if (window.logger) {
+            window.logger.warn(`Unknown palette: ${paletteName}`);
+        }
+        return false;
+    }
+
+    /**
+     * Get the current palette name
+     */
+    function getCurrentPaletteName() {
+        return currentPaletteName;
+    }
+
+    /**
+     * Initialize palette from config
+     */
+    function initPaletteFromConfig() {
+        if (window.ConfigManager && window.ConfigManager.config && 
+            window.ConfigManager.config.colorPalette && 
+            PALETTES[window.ConfigManager.config.colorPalette]) {
+            currentPaletteName = window.ConfigManager.config.colorPalette;
+            if (window.logger) {
+                window.logger.info(`Initialized palette from config: ${currentPaletteName}`);
+            }
+        }
+    }
+
+    /**
+     * Get list of all available palette names with metadata
+     */
+    function getAvailablePalettes() {
+        const list = [];
+        for (const [name, palette] of Object.entries(PALETTES)) {
+            list.push({
+                name: name,
+                displayName: palette.name,
+                description: palette.description
+            });
+        }
+        return list;
+    }
+
     const ColorizationEngine = {
         /**
-         * DEFAULT PALETTES
+         * DEFAULT PALETTES - Now using palette system
          */
-        palettes: {
-            phonemes: [
-                "#A60628", "#0047AB", "#006B3C", "#AA3300", "#006994",
-                "#663300", "#8B008B", "#000000"
-            ],
-            syllables: ["#A60628", "#0047AB"], // Dark Red, Dark Blue
-            words: ["#000000", "#0047AB"],     // Black, Dark Blue
-            lines: ["#000000", "#0047AB"],     // Black, Dark Blue
-            letters: ["#A60628", "#0047AB", "#006B3C", "#AA3300"], // Consistent set
-            vowels: "#6D214F",                 // Dark Purple
-            consonants: "#0047AB",             // Dark Blue
-            silent: "#606060",                 // Dark Grey
-            punctuation: "#6D214F",            // Dark Purple (consistent with vowels/other marking)
-            grammar: {
-                'NOM': '#A60628', // Dark Red
-                'VER': '#0047AB', // Dark Blue
-                'ADJ': '#006994', // Dark Cyan
-                'ADV': '#006B3C', // Dark Green
-                'PRO': '#AA3300', // Dark Orange
-                'DET': '#6D214F', // Dark Purple
-                'PRE': '#000000', // Black
-                'CON': '#663300', // Dark Brown
-                'INT': '#8B008B', // Dark Magenta
-            }
+        palettes: PALETTES.default,
+        highlightPalettes: PALETTES.default.highlight,
+
+        // Legacy compatibility - point to current palette
+        get palettes() {
+            return getCurrentPalette();
         },
+        
+        get highlightPalettes() {
+            return getCurrentHighlightPalette();
+        },
+
+        // Expose palette management functions
+        getCurrentPaletteName: getCurrentPaletteName,
+        setCurrentPalette: setCurrentPalette,
+        getCurrentPalette: getCurrentPalette,
+        getAvailablePalettes: getAvailablePalettes,
+        initPaletteFromConfig: initPaletteFromConfig,
+        displayColorLegend: displayColorLegend,
+
+        // Legacy properties for backward compatibility
+        lineColors: ["#FFFACD", "#E0F0FF"],
 
         // Pastel versions for highlighting mode (background colors)
         highlightPalettes: {

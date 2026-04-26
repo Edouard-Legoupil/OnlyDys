@@ -99,6 +99,22 @@
 
                     <!-- Global Options -->
                     <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee;">
+                        <div class="control-group" style="margin-bottom: 10px;">
+                            <label for="palette-selector" style="font-size: 0.9em; display: block; margin-bottom: 5px; font-weight: bold;">
+                                Palette de couleurs (daltonisme) :
+                            </label>
+                            <select id="palette-selector" class="form-control"
+                                    style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95em;">
+                                <option value="default">Default (Originale)</option>
+                                <option value="okabeIto">Okabe-Ito (Universelle)</option>
+                                <option value="tolsQualitative">Tol's Qualitative</option>
+                                <option value="viridis">Viridis (Uniforme)</option>
+                                <option value="highContrast">Haute Contraste</option>
+                            </select>
+                            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                                Sélectionnez une palette adaptée pour le daltonisme
+                            </div>
+                        </div>
                         <div class="checkbox-group">
                             <input type="checkbox" id="opt-highlighting">
                             <label for="opt-highlighting">Utiliser le surlignage (fond coloré)</label>

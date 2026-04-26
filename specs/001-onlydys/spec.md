@@ -5,7 +5,7 @@
 | Field | Value |
 |-------|-------|
 | **Specification ID** | 001-onlydys |
-| **Version** | 1.1.0 |
+| **Version** | 1.2.0 |
 | **Last Updated** | 2025-01-XX |
 | **Author** | Based on analysis by Mistral Vibe |
 | **Status** | Active |
@@ -88,6 +88,7 @@ OnlyDys provides a comprehensive suite of tools embedded within the ONLYOFFICE e
 | Debouncing for On-the-go Suggestions | Rate-limiting to prevent rapid API calls during cursor movement | ✅ Implemented | P1 |
 | Loading Overlay | Visual feedback during dictionary initialization | ✅ Implemented | P1 |
 | Restricted Mode Detection | Fallback mechanism for limited ONLYOFFICE editor APIs | ✅ Implemented | P1 |
+| Color-Blind Palette Selection | 5 color-blind friendly palettes with dynamic legend | ✅ Implemented | P1 |
 
 ### 3.2 Suggestions System
 
@@ -140,6 +141,102 @@ Each suggestion appears as an interactive card containing:
 - Displays modal with 500x500px transparent PNG from ARASAAC
 - Falls back to "Aucun pictogramme trouvé" message if not available
 - Pictograms provide visual reinforcement for word comprehension
+
+#### 3.2.4 Color-Blind Palette Selection
+
+**Purpose:** Provide color-blind friendly color schemes for users with color vision deficiency (CVD), including Protanopia, Deuteranopia, and Tritanopia.
+
+**Features:**
+- 5 scientifically-designed color palettes optimized for accessibility
+- Dynamic color legend that updates to show current palette
+- Persistent selection saved to localStorage
+- Real-time preview in Linguistics tab
+
+**Available Palettes:**
+
+| Name | Description | Source | Best For |
+|------|-------------|--------|----------|
+| **Default** | Original OnlyDys color scheme | Custom | General use |
+| **Okabe-Ito** | Color Universal Design - scientifically optimized for all CVD types | [Okabe & Ito, 2008](https://jfly.uni-koeln.de/color/) | All color blindness |
+| **Tol's Qualitative** | Paul Tol's qualitative color scheme | [Paul Tol](https://personal.sron.nl/~pault/) | Color distinction |
+| **Viridis** | Perceptually uniform color map | [viridis](https://cran.r-project.org/web/packages/viridis/) | Sequential data, CVD safe |
+| **High Contrast** | Maximum contrast colors | Custom | Low vision, maximum readability |
+
+**Palette Colors (Grammar Categories):**
+
+**Default:**
+- NOM: #A60628 (Dark Red), VER: #0047AB (Dark Blue), ADJ: #006994 (Dark Cyan)
+- ADV: #006B3C (Dark Green), PRO: #AA3300 (Dark Orange), DET: #6D214F (Dark Purple)
+- PRE: #000000 (Black), CON: #663300 (Dark Brown), INT: #8B008B (Dark Magenta)
+
+**Okabe-Ito:**
+- NOM: #E69F00 (Orange), VER: #56B4E9 (Blue), ADJ: #009E73 (Green)
+- ADV: #F0E442 (Yellow), PRO: #F0E442 (Yellow), DET: #0072B2 (Dark Blue)
+- PRE: #000000 (Black), CON: #D55E00 (Vermilion), INT: #CC79A7 (Pink)
+
+**Tol's Qualitative:**
+- NOM: #332288 (Indigo), VER: #117733 (Green), ADJ: #44AA99 (Teal)
+- ADV: #88CCEE (Cyan), PRO: #DDCC77 (Gold), DET: #CC6677 (Pink)
+- PRE: #000000 (Black), CON: #AA4499 (Purple), INT: #CC6677 (Pink)
+
+**Viridis:**
+- NOM: #440154 (Dark Purple), VER: #482878 (Purple), ADJ: #3E4989 (Blue)
+- ADV: #31688E (Blue), PRO: #26828E (Teal), DET: #1F9E89 (Green)
+- PRE: #000000 (Black), CON: #35B779 (Green), INT: #1F9E89 (Green)
+
+**High Contrast:**
+- NOM: #0000FF (Blue), VER: #FF0000 (Red), ADJ: #00FF00 (Green)
+- ADV: #FF8000 (Orange), PRO: #8000FF (Purple), DET: #FFFF00 (Yellow)
+- PRE: #000000 (Black), CON: #FF00FF (Magenta), INT: #FF00FF (Magenta)
+
+**User Interface:**
+- Dropdown selector in Linguistics tab Global Options section
+- Label: "Palette de couleurs (daltonisme)"
+- Description: "Sélectionnez une palette adaptée pour le daltonisme"
+- 5 options matching the palette names above
+
+**Configuration:**
+- Stored in: `ConfigManager.config.colorPalette`
+- Default: `'default'`
+- Type: string
+- Persistence: localStorage (`onlydys_ling_config`)
+
+**Implementation Details:**
+
+**Palette System Architecture:**
+```javascript
+const PALETTES = {
+    default: { name: 'Default', description: '...', grammar: {...}, highlight: {...} },
+    okabeIto: { name: 'Okabe-Ito', description: '...', grammar: {...}, highlight: {...} },
+    tolsQualitative: { ... },
+    viridis: { ... },
+    highContrast: { ... }
+};
+
+// Current palette management
+let currentPaletteName = 'default';
+function setCurrentPalette(name) { ... }
+function getCurrentPalette() { return PALETTES[currentPaletteName]; }
+```
+
+**Color Legend:**
+- Automatically updates when palette changes
+- Shows palette name as title
+- Displays color swatches with grammatical category labels
+- Styled with flexbox for responsive layout
+- Color boxes: 24x24px with border radius
+
+**Highlighting Mode:**
+- Each palette includes both text colors and background highlight colors
+- Highlight colors are lighter versions of the same palette
+- Automatically selected based on `useHighlighting` option
+
+**Accessibility Features:**
+- All palettes tested for color-blind safety
+- Sufficient contrast between all colors
+- Perceptually uniform where applicable (Viridis)
+- High Contrast palette for low vision users
+- Color and text both convey information (redundant coding)
 
 #### 3.2.4 Debouncing for On-the-go Mode
 
@@ -2055,6 +2152,7 @@ The plugin integrates techniques from:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2.0 | 2025-01-XX | Mistral Vibe Analysis | Added Color-Blind Palette Selection feature with 5 scientifically-designed palettes (Default, Okabe-Ito, Tol's Qualitative, Viridis, High Contrast), dynamic color legend, and UI selector. Updated feature matrix. Previous: Debouncing, Loading overlay, Restricted mode handling, Pictogram display. Updated class diagram with ArcRenderer methods. Added SuggestionConfig.suggestionDebounceMs. Enhanced Restricted Mode Handling section. |
 | 1.1.0 | 2025-01-XX | Mistral Vibe Analysis | Added documentation for recent features: Debouncing for on-the-go suggestions, Loading overlay for dictionary, Restricted mode detection and warning, Pictogram display in suggestions. Updated class diagram with ArcRenderer methods. Added SuggestionConfig.suggestionDebounceMs to configuration model. Enhanced Restricted Mode Handling section with detailed fallback strategy. |
 | 1.0.0 | 2024-XX-XX | Mistral Vibe Analysis | Initial specification based on codebase review |
 

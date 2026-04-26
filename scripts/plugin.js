@@ -491,6 +491,13 @@
     };
 
     function displayColorLegend() {
+        // Delegate to ColorizationEngine if available
+        if (window.ColorizationEngine && window.ColorizationEngine.displayColorLegend) {
+            window.ColorizationEngine.displayColorLegend();
+            return;
+        }
+        
+        // Fallback to hardcoded version
         const legendContainer = document.getElementById('color-legend');
         if (!legendContainer) return;
         legendContainer.innerHTML = '';
@@ -775,7 +782,12 @@
         }
     };
 
-    window.ColorizationEngine = ColorizationEngine;
+    // Note: ColorizationEngine is now maintained in scripts/colorizationEngine.js
+    // which is loaded before this script. Do not override it here.
+    // If ColorizationEngine is not yet defined, define it now for backward compatibility
+    if (!window.ColorizationEngine) {
+        window.ColorizationEngine = ColorizationEngine;
+    }
 
 })(window);
 `;
