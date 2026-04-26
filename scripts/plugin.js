@@ -47,88 +47,88 @@
             if (!isActive) return;
 
             if (mode === 'onthego' || mode === 'selection') {
-                // First try GetSelectedText (works when user has selected text)
-                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                    if (window.logger) {
-                        window.logger.info((mode === 'onthego' ? "Onthego" : "Selection") + " Mode - GetSelectedText: '" + (text || '') + "'");
-                    }
-                    
-                    if (text && text.trim().length > 0) {
-                        // We have selected text
-                        if (mode === 'selection') {
+                // For on-the-go mode: PRIMARY method is GetCurrentWord (word at cursor)
+                // For selection mode: PRIMARY method is GetSelectedText (selected text)
+                if (mode === 'onthego') {
+                    // Primary method: GetCurrentWord for on-the-go mode
+                    window.Asc.plugin.executeMethod("GetCurrentWord", [], function (word) {
+                        if (window.logger) window.logger.info("GetCurrentWord result: '" + (word || '') + "'");
+                        
+                        if (word && typeof word === 'string' && word.trim().length > 0) {
+                            processSuggestions(word);
+                        } else {
+                            // Fallback to GetSelectedText if no word at cursor
+                            if (window.logger) window.logger.info("GetCurrentWord failed, trying GetSelectedText");
+                            
+                            window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                                if (window.logger) window.logger.info("GetSelectedText fallback: '" + (text || '') + "'");
+                                
+                                if (text && typeof text === 'string' && text.trim().length > 0) {
+                                    // Use first word if multiple words selected
+                                    const words = text.trim().split(/\s+/);
+                                    if (words.length > 0) {
+                                        processSuggestions(words[0]);
+                                    }
+                                } else {
+                                    // Last resort: try ExpandToWord via callCommand
+                                    if (window.logger) window.logger.info("Trying ExpandToWord as last resort");
+                                    
+                                    window.Asc.plugin.callCommand(function () {
+                                        try {
+                                            if (typeof Api === 'undefined') return "";
+                                            var oDocument = Api.GetDocument();
+                                            if (!oDocument) return "";
+                                            var oRange = null;
+                                            if (typeof oDocument.GetRangeBySelect === 'function') {
+                                                oRange = oDocument.GetRangeBySelect();
+                                            } else if (typeof oDocument.GetSelection === 'function') {
+                                                oRange = oDocument.GetSelection();
+                                            } else if (typeof oDocument.GetRange === 'function') {
+                                                oRange = oDocument.GetRange();
+                                            }
+                                            if (!oRange) return "";
+                                            if (typeof oRange.ExpandToWord === 'function') {
+                                                oRange.ExpandToWord();
+                                                var word = oRange.GetText();
+                                                if (window.logger) window.logger.info("ExpandToWord result: '" + (word || '') + "'");
+                                                return word || "";
+                                            }
+                                            return "";
+                                        } catch (err) {
+                                            if (window.logger) window.logger.error("ExpandToWord error: " + err.toString());
+                                            return "";
+                                        }
+                                    }, false, true, function (result) {
+                                        if (window.logger) window.logger.info("Word detection result: '" + (result || '') + "'");
+                                        if (result && typeof result === 'string' && result.trim().length > 0) {
+                                            processSuggestions(result);
+                                        } else {
+                                            if (window.logger) window.logger.info("No word found at cursor");
+                                            const container = document.getElementById('suggestions-container');
+                                            if (container) container.innerHTML = '';
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    // Selection mode: use GetSelectedText
+                    window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                        if (window.logger) window.logger.info("Selection mode - GetSelectedText: '" + (text || '') + "'");
+                        
+                        if (text && typeof text === 'string' && text.trim().length > 0) {
                             // In selection mode, process all selected words
                             const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
                             if (window.logger) window.logger.info("Selection mode processing: '" + words + "'");
                             processSuggestions(words);
                         } else {
-                            // In on-the-go mode, use first word
-                            const words = text.trim().split(/\s+/);
-                            if (words.length > 0) {
-                                if (window.logger) window.logger.info("Onthego mode processing first word: '" + words[0] + "'");
-                                processSuggestions(words[0]);
-                            }
-                        }
-                    } else {
-                        // No selection - cursor only
-                        if (mode === 'onthego') {
-                            if (window.logger) window.logger.info("No selection, trying ExpandToWord");
-                            
-                            // Use callCommand to access document and expand selection to word
-                            window.Asc.plugin.callCommand(function () {
-                                try {
-                                    if (typeof Api === 'undefined') return "";
-                                    
-                                    var oDocument = Api.GetDocument();
-                                    if (!oDocument) return "";
-                                    
-                                    // Get selection/range
-                                    var oRange = null;
-                                    if (typeof oDocument.GetRangeBySelect === 'function') {
-                                        oRange = oDocument.GetRangeBySelect();
-                                    } else if (typeof oDocument.GetSelection === 'function') {
-                                        oRange = oDocument.GetSelection();
-                                    } else if (typeof oDocument.GetRange === 'function') {
-                                        oRange = oDocument.GetRange();
-                                    }
-                                    
-                                    if (!oRange) return "";
-                                    
-                                    // Expand to word and get text
-                                    if (typeof oRange.ExpandToWord === 'function') {
-                                        oRange.ExpandToWord();
-                                        var word = oRange.GetText();
-                                        if (window.logger) window.logger.info("ExpandToWord result: '" + (word || '') + "'");
-                                        return word || "";
-                                    }
-                                    
-                                    return "";
-                                } catch (err) {
-                                    if (window.logger) window.logger.error("ExpandToWord error: " + err.toString());
-                                    return "";
-                                }
-                            }, false, true, function (result) {
-                                if (window.logger) window.logger.info("Word detection result: '" + (result || '') + "'");
-                                
-                                if (result && typeof result === 'string' && result.trim().length > 0) {
-                                    // Got a word
-                                    if (window.logger) window.logger.info("Processing word: '" + result + "'");
-                                    processSuggestions(result);
-                                } else {
-                                    // Failed to get word, clear suggestions
-                                    if (window.logger) window.logger.info("No word found at cursor");
-                                    const container = document.getElementById('suggestions-container');
-                                    if (container) {
-                                        container.innerHTML = '';
-                                    }
-                                }
-                            });
-                        } else {
                             // Selection mode with no selection - just clear
                             if (window.logger) window.logger.info("Selection mode with no selection");
                             processSuggestions("");
                         }
-                    }
-                });
+                    });
+                }
             }
         }
 
@@ -570,15 +570,14 @@
         }
     }
 
-    const ColorizationEngine = {
-        palettes: {
-            phonemes: [
-                "#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A",
-                "#BCBD22", "#E377C2", "#4B0082"
-            ],
+    // Palette system - same as in colorizationEngine.js but inline for ONLYOFFICE context
+    const PALETTES = {
+        'default': {
+            name: 'Default',
+            description: 'High-contrast OnlyDys color scheme',
+            phonemes: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A", "#BCBD22", "#E377C2", "#4B0082"],
             syllables: ["#D62728", "#2B83BA"],
             words: ["#4B0082", "#2B83BA"],
-            lines: ["#4B0082", "#2B83BA"],
             letters: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E"],
             vowels: "#E377C2",
             consonants: "#2B83BA",
@@ -587,26 +586,168 @@
             grammar: {
                 'NOM': '#D62728', 'VER': '#2B83BA', 'ADJ': '#2CA02C', 'ADV': '#98DF8A',
                 'PRO': '#FF7F0E', 'DET': '#BCBD22', 'PRE': '#4B0082', 'CON': '#8B4513', 'INT': '#E377C2'
+            },
+            highlight: {
+                phonemes: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6", "#E6FFE6", "#FFFFE6", "#FFE6F5", "#E6E6FF"],
+                syllables: ["#FFEEEE", "#E6F5FF"],
+                words: ["#E6E6FF", "#E6F5FF"],
+                letters: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6"],
+                vowels: "#FFE6F5",
+                consonants: "#E6F5FF",
+                silent: "#F0F0F0",
+                punctuation: "#FFE6F5",
+                grammar: {
+                    'NOM': '#FFEEEE', 'VER': '#E6F5FF', 'ADJ': '#E6FFEE', 'ADV': '#E6FFE6',
+                    'PRO': '#FFECE6', 'DET': '#FFFFE6', 'PRE': '#E6E6FF', 'CON': '#FFE6D3', 'INT': '#FFE6F5'
+                }
             }
         },
-
-        highlightPalettes: {
-            phonemes: [
-                "#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6", "#E6FFE6",
-                "#FFFFE6", "#FFE6F5", "#E6E6FF"
-            ],
-            syllables: ["#FFEEEE", "#E6F5FF"],
-            words: ["#E6E6FF", "#E6F5FF"],
-            lines: ["#E6E6FF", "#E6F5FF"],
-            letters: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6"],
-            vowels: "#FFE6F5",
-            consonants: "#E6F5FF",
-            silent: "#F0F0F0",
-            punctuation: "#FFE6F5",
+        'okabeIto': {
+            name: 'Okabe-Ito',
+            description: 'Color Universal Design',
+            phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
+            syllables: ["#E69F00", "#56B4E9"],
+            words: ["#000000", "#56B4E9"],
+            letters: ["#E69F00", "#56B4E9", "#009E73", "#F0E442"],
+            vowels: "#009E73",
+            consonants: "#56B4E9",
+            silent: "#808080",
+            punctuation: "#CC79A7",
             grammar: {
-                'NOM': '#FFEEEE', 'VER': '#E6F5FF', 'ADJ': '#E6FFEE', 'ADV': '#E6FFE6',
-                'PRO': '#FFECE6', 'DET': '#FFFFE6', 'PRE': '#E6E6FF', 'CON': '#FFE6D3', 'INT': '#FFE6F5'
+                'NOM': '#E69F00', 'VER': '#56B4E9', 'ADJ': '#009E73', 'ADV': '#F0E442',
+                'PRO': '#F0E442', 'DET': '#0072B2', 'PRE': '#000000', 'CON': '#D55E00', 'INT': '#CC79A7'
+            },
+            highlight: {
+                phonemes: ["#FFF5EB", "#E7F5FF", "#E7FFEF", "#FFFFE7", "#E7F0FA", "#FFECE7", "#FFEBF5", "#F8F8F8"],
+                syllables: ["#FFF5EB", "#E7F5FF"],
+                words: ["#F8F8F8", "#E7F5FF"],
+                letters: ["#FFF5EB", "#E7F5FF", "#E7FFEF", "#FFFFE7"],
+                vowels: "#E7FFEF",
+                consonants: "#E7F5FF",
+                silent: "#D3D3D3",
+                punctuation: "#FFEBF5",
+                grammar: {
+                    'NOM': '#FFF5EB', 'VER': '#E7F5FF', 'ADJ': '#E7FFEF', 'ADV': '#FFFFE7',
+                    'PRO': '#FFFFE7', 'DET': '#E7F0FA', 'PRE': '#F8F8F8', 'CON': '#FFECE7', 'INT': '#FFEBF5'
+                }
             }
+        },
+        'tolsQualitative': {
+            name: "Tol's Qualitative",
+            description: 'Paul Tol qualitative scheme',
+            phonemes: ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#000000"],
+            syllables: ["#117733", "#44AA99"],
+            words: ["#000000", "#44AA99"],
+            letters: ["#332288", "#117733", "#44AA99", "#88CCEE"],
+            vowels: "#AA4499",
+            consonants: "#44AA99",
+            silent: "#808080",
+            punctuation: "#CC6677",
+            grammar: {
+                'NOM': '#332288', 'VER': '#117733', 'ADJ': '#44AA99', 'ADV': '#88CCEE',
+                'PRO': '#DDCC77', 'DET': '#CC6677', 'PRE': '#000000', 'CON': '#AA4499', 'INT': '#CC6677'
+            },
+            highlight: {
+                phonemes: ["#E6D6FF", "#D6F5D6", "#D6F5F5", "#E6F5FF", "#FFF5D6", "#FFD6E6", "#F5D6FF", "#F8F8F8"],
+                syllables: ["#D6F5D6", "#D6F5F5"],
+                words: ["#F8F8F8", "#D6F5F5"],
+                letters: ["#E6D6FF", "#D6F5D6", "#D6F5F5", "#E6F5FF"],
+                vowels: "#F5D6FF",
+                consonants: "#D6F5F5",
+                silent: "#D3D3D3",
+                punctuation: "#FFD6E6",
+                grammar: {
+                    'NOM': '#E6D6FF', 'VER': '#D6F5D6', 'ADJ': '#D6F5F5', 'ADV': '#E6F5FF',
+                    'PRO': '#FFF5D6', 'DET': '#FFD6E6', 'PRE': '#F8F8F8', 'CON': '#F5D6FF', 'INT': '#FFD6E6'
+                }
+            }
+        },
+        'viridis': {
+            name: 'Viridis',
+            description: 'Perceptually uniform',
+            phonemes: ["#440154", "#482878", "#3E4989", "#31688E", "#26828E", "#1F9E89", "#35B779", "#000000"],
+            syllables: ["#440154", "#1F9E89"],
+            words: ["#000000", "#1F9E89"],
+            letters: ["#440154", "#482878", "#3E4989", "#31688E"],
+            vowels: "#26828E",
+            consonants: "#1F9E89",
+            silent: "#505050",
+            punctuation: "#35B779",
+            grammar: {
+                'NOM': '#440154', 'VER': '#482878', 'ADJ': '#3E4989', 'ADV': '#31688E',
+                'PRO': '#26828E', 'DET': '#1F9E89', 'PRE': '#000000', 'CON': '#35B779', 'INT': '#1F9E89'
+            },
+            highlight: {
+                phonemes: ["#F0E6FF", "#E6E6FF", "#D6E6FF", "#C6E6FF", "#B6E6FF", "#A6FFE6", "#A6FFA6", "#F8F8F8"],
+                syllables: ["#F0E6FF", "#A6FFE6"],
+                words: ["#F8F8F8", "#A6FFE6"],
+                letters: ["#F0E6FF", "#E6E6FF", "#D6E6FF", "#C6E6FF"],
+                vowels: "#B6E6FF",
+                consonants: "#A6FFE6",
+                silent: "#D3D3D3",
+                punctuation: "#A6FFA6",
+                grammar: {
+                    'NOM': '#F0E6FF', 'VER': '#E6E6FF', 'ADV': '#C6E6FF', 'ADJ': '#D6E6FF',
+                    'PRO': '#B6E6FF', 'DET': '#A6FFE6', 'PRE': '#F8F8F8', 'CON': '#A6FFA6', 'INT': '#A6FFE6'
+                }
+            }
+        },
+        'highContrast': {
+            name: 'High Contrast',
+            description: 'Maximum contrast',
+            phonemes: ["#0000FF", "#FF0000", "#00FF00", "#FF8000", "#8000FF", "#FFFF00", "#FF00FF", "#000000"],
+            syllables: ["#0000FF", "#FF0000"],
+            words: ["#000000", "#FF0000"],
+            letters: ["#0000FF", "#FF0000", "#00FF00", "#FF8000"],
+            vowels: "#8000FF",
+            consonants: "#0000FF",
+            silent: "#808080",
+            punctuation: "#FF00FF",
+            grammar: {
+                'NOM': '#0000FF', 'VER': '#FF0000', 'ADJ': '#00FF00', 'ADV': '#FF8000',
+                'PRO': '#8000FF', 'DET': '#FFFF00', 'PRE': '#000000', 'CON': '#FF00FF', 'INT': '#FF00FF'
+            },
+            highlight: {
+                phonemes: ["#E6E6FF", "#FFE6E6", "#E6FFE6", "#FFE6D6", "#F0E6FF", "#FFFFE6", "#FFE6FF", "#F8F8F8"],
+                syllables: ["#E6E6FF", "#FFE6E6"],
+                words: ["#F8F8F8", "#FFE6E6"],
+                letters: ["#E6E6FF", "#FFE6E6", "#E6FFE6", "#FFE6D6"],
+                vowels: "#F0E6FF",
+                consonants: "#E6E6FF",
+                silent: "#D3D3D3",
+                punctuation: "#FFE6FF",
+                grammar: {
+                    'NOM': '#E6E6FF', 'VER': '#FFE6E6', 'ADJ': '#E6FFE6', 'ADV': '#FFE6D6',
+                    'PRO': '#F0E6FF', 'DET': '#FFFFE6', 'PRE': '#F8F8F8', 'CON': '#FFE6FF', 'INT': '#FFE6FF'
+                }
+            }
+        }
+    };
+
+    // Helper to get current palette based on config or default
+    function getPalette(paletteName) {
+        return PALETTES[paletteName] || PALETTES['default'];
+    }
+
+    // Helper to get the appropriate color set based on highlighting mode
+    function getPaletteColors(paletteName, useHighlighting, paletteKey) {
+        const palette = getPalette(paletteName);
+        if (useHighlighting && palette.highlight && palette.highlight[paletteKey]) {
+            return palette.highlight[paletteKey];
+        }
+        return palette[paletteKey];
+    }
+
+    const ColorizationEngine = {
+        // Legacy properties pointing to default palette - updated to use dynamic palette selection
+        get palettes() {
+            // Return the current palette's colors based on config
+            // Note: This is a getter, so it will be evaluated dynamically
+            return PALETTES['default'];
+        },
+        
+        get highlightPalettes() {
+            return PALETTES['default'].highlight;
         },
 
         lineColors: ["#FFFACD", "#E0F0FF"],
@@ -654,13 +795,27 @@
                 newRuns.push({ text: text, formatting: formatting });
             };
 
+            // Get palette name from config or default
+            const paletteName = (config.options && config.options.colorPalette) || 'default';
+            const useHighlighting = config.options && config.options.useHighlighting;
+            
             const getPalette = (paletteKey) => {
-                const useHighlighting = config.options && config.options.useHighlighting;
-                if (useHighlighting && ColorizationEngine.highlightPalettes[paletteKey]) {
-                    return ColorizationEngine.highlightPalettes[paletteKey];
-                }
-                return ColorizationEngine.palettes[paletteKey];
+                const palette = getPaletteFromConfig(paletteName, useHighlighting, paletteKey);
+                return palette;
             };
+            
+            // Helper within processRun scope
+            function getPaletteFromConfig(paletteName, useHighlighting, paletteKey) {
+                const palette = PALETTES[paletteName] || PALETTES['default'];
+                if (useHighlighting && palette.highlight && palette.highlight[paletteKey]) {
+                    return palette.highlight[paletteKey];
+                }
+                if (palette[paletteKey]) {
+                    return palette[paletteKey];
+                }
+                // Fallback to default
+                return PALETTES['default'][paletteKey];
+            }
 
             if (config.mode === 'alternlines') {
                 const lineIndex = config.lineIndex || 0;
@@ -668,11 +823,11 @@
                 addSegment(originalText, null, { backgroundColor: bgColor });
 
             } else if (config.mode === 'grammar') {
-                const words = originalText.split(/(\\P{L}+)/u).filter(t => t !== "");
+                const words = originalText.split(/(\P{L}+)/u).filter(t => t !== "");
                 const grammarPalette = getPalette('grammar');
 
                 words.forEach(token => {
-                    if (engine.isPunctuation(token) || /^\\s+$/.test(token) || token === "") {
+                    if (engine.isPunctuation(token) || /^\s+$/.test(token) || token === "") {
                         addSegment(token, null);
                         return;
                     }
@@ -684,9 +839,13 @@
                         grammar = wordMap.get(lemma);
                     }
 
+                    // Normalize grammar category (ADJ:dem -> ADJ, AUX -> VER, etc.)
+                    const normalizedGrammar = ColorizationEngine.normalizeGrammarCategory ? 
+                        ColorizationEngine.normalizeGrammarCategory(grammar) : grammar;
+
                     let color = null;
-                    if (grammar && grammarPalette[grammar]) {
-                        color = grammarPalette[grammar];
+                    if (normalizedGrammar && grammarPalette[normalizedGrammar]) {
+                        color = grammarPalette[normalizedGrammar];
                     }
                     addSegment(token, color);
                 });
@@ -1346,20 +1505,164 @@
                         }
                     };
 
-                    // Inline ColorizationEngine (no eval needed)
-                    var ColorizationEngine = {
-                        palettes: {
+                    // Pa_hosting all PALETTES inline for palette selection support
+                    var PALETTES_INLINE = {
+                        'default': {
                             phonemes: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E", "#98DF8A", "#BCBD22", "#E377C2", "#4B0082"],
                             syllables: ["#D62728", "#2B83BA"],
                             words: ["#4B0082", "#2B83BA"],
                             lines: ["#4B0082", "#2B83BA"],
-                            vowels: "#E377C2", consonants: "#2B83BA", silent: "#606060", punctuation: "#E377C2",
                             letters: ["#D62728", "#2B83BA", "#2CA02C", "#FF7F0E"],
+                            vowels: "#E377C2", consonants: "#2B83BA", silent: "#606060", punctuation: "#E377C2",
                             grammar: {
                                 'NOM': '#D62728', 'VER': '#2B83BA', 'ADJ': '#2CA02C', 'ADV': '#98DF8A',
                                 'PRO': '#FF7F0E', 'DET': '#BCBD22', 'PRE': '#4B0082', 'CON': '#8B4513', 'INT': '#E377C2'
+                            },
+                            highlight: {
+                                phonemes: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC", "#E6F9FF", "#F5E6D3", "#F2E6FF", "#F0F0F0"],
+                                syllables: ["#FFE6E6", "#E6F2FF"],
+                                words: ["#F0F0F0", "#E6F2FF"],
+                                lines: ["#F0F0F0", "#E6F2FF"],
+                                letters: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC"],
+                                vowels: "#F2E6FF", consonants: "#E6F2FF", silent: "#F0F0F0", punctuation: "#F2E6FF",
+                                grammar: {
+                                    'NOM': '#FFE6E6', 'VER': '#E6F2FF', 'ADJ': '#E6F9FF', 'ADV': '#E6F9E6',
+                                    'PRO': '#FFE6CC', 'DET': '#F2E6FF', 'PRE': '#F0F0F0', 'CON': '#F5E6D3', 'INT': '#F2E6FF'
+                                }
                             }
                         },
+                        'okabeIto': {
+                            phonemes: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
+                            syllables: ["#E69F00", "#56B4E9"],
+                            words: ["#000000", "#56B4E9"],
+                            lines: ["#000000", "#56B4E9"],
+                            letters: ["#E69F00", "#56B4E9", "#009E73", "#F0E442"],
+                            vowels: "#009E73", consonants: "#56B4E9", silent: "#808080", punctuation: "#CC79A7",
+                            grammar: {
+                                'NOM': '#E69F00', 'VER': '#56B4E9', 'ADJ': '#009E73', 'ADV': '#F0E442',
+                                'PRO': '#F0E442', 'DET': '#0072B2', 'PRE': '#000000', 'CON': '#D55E00', 'INT': '#CC79A7'
+                            },
+                            highlight: {
+                                phonemes: ["#FFF5EB", "#E7F5FF", "#E7FFEF", "#FFFFE7", "#E7F0FA", "#FFECE7", "#FFEBF5", "#F8F8F8"],
+                                syllables: ["#FFF5EB", "#E7F5FF"],
+                                words: ["#F8F8F8", "#E7F5FF"],
+                                lines: ["#F8F8F8", "#E7F5FF"],
+                                letters: ["#FFF5EB", "#E7F5FF", "#E7FFEF", "#FFFFE7"],
+                                vowels: "#E7FFEF", consonants: "#E7F5FF", silent: "#D3D3D3", punctuation: "#FFEBF5",
+                                grammar: {
+                                    'NOM': '#FFF5EB', 'VER': '#E7F5FF', 'ADJ': '#E7FFEF', 'ADV': '#FFFFE7',
+                                    'PRO': '#FFFFE7', 'DET': '#E7F0FA', 'PRE': '#F8F8F8', 'CON': '#FFECE7', 'INT': '#FFEBF5'
+                                }
+                            }
+                        },
+                        'tolsQualitative': {
+                            phonemes: ["#332288", "#117733", "#44AA99", "#88CCEE", "#DDCC77", "#CC6677", "#AA4499", "#000000"],
+                            syllables: ["#117733", "#44AA99"],
+                            words: ["#000000", "#44AA99"],
+                            lines: ["#000000", "#44AA99"],
+                            letters: ["#332288", "#117733", "#44AA99", "#88CCEE"],
+                            vowels: "#AA4499", consonants: "#44AA99", silent: "#808080", punctuation: "#CC6677",
+                            grammar: {
+                                'NOM': '#332288', 'VER': '#117733', 'ADJ': '#44AA99', 'ADV': '#88CCEE',
+                                'PRO': '#DDCC77', 'DET': '#CC6677', 'PRE': '#000000', 'CON': '#AA4499', 'INT': '#CC6677'
+                            },
+                            highlight: {
+                                phonemes: ["#E6D6FF", "#D6F5D6", "#D6F5F5", "#E6F5FF", "#FFF5D6", "#FFD6E6", "#F5D6FF", "#F8F8F8"],
+                                syllables: ["#D6F5D6", "#D6F5F5"],
+                                words: ["#F8F8F8", "#D6F5F5"],
+                                lines: ["#F8F8F8", "#D6F5F5"],
+                                letters: ["#E6D6FF", "#D6F5D6", "#D6F5F5", "#E6F5FF"],
+                                vowels: "#F5D6FF", consonants: "#D6F5F5", silent: "#D3D3D3", punctuation: "#FFD6E6",
+                                grammar: {
+                                    'NOM': '#E6D6FF', 'VER': '#D6F5D6', 'ADJ': '#D6F5F5', 'ADV': '#E6F5FF',
+                                    'PRO': '#FFF5D6', 'DET': '#FFD6E6', 'PRE': '#F8F8F8', 'CON': '#F5D6FF', 'INT': '#FFD6E6'
+                                }
+                            }
+                        },
+                        'viridis': {
+                            phonemes: ["#440154", "#482878", "#3E4989", "#31688E", "#26828E", "#1F9E89", "#35B779", "#000000"],
+                            syllables: ["#440154", "#1F9E89"],
+                            words: ["#000000", "#1F9E89"],
+                            lines: ["#000000", "#1F9E89"],
+                            letters: ["#440154", "#482878", "#3E4989", "#31688E"],
+                            vowels: "#26828E", consonants: "#1F9E89", silent: "#505050", punctuation: "#35B779",
+                            grammar: {
+                                'NOM': '#440154', 'VER': '#482878', 'ADJ': '#3E4989', 'ADV': '#31688E',
+                                'PRO': '#26828E', 'DET': '#1F9E89', 'PRE': '#000000', 'CON': '#35B779', 'INT': '#1F9E89'
+                            },
+                            highlight: {
+                                phonemes: ["#F0E6FF", "#E6E6FF", "#D6E6FF", "#C6E6FF", "#B6E6FF", "#A6FFE6", "#A6FFA6", "#F8F8F8"],
+                                syllables: ["#F0E6FF", "#A6FFE6"],
+                                words: ["#F8F8F8", "#A6FFE6"],
+                                lines: ["#F8F8F8", "#A6FFE6"],
+                                letters: ["#F0E6FF", "#E6E6FF", "#D6E6FF", "#C6E6FF"],
+                                vowels: "#B6E6FF", consonants: "#A6FFE6", silent: "#D3D3D3", punctuation: "#A6FFA6",
+                                grammar: {
+                                    'NOM': '#F0E6FF', 'VER': '#E6E6FF', 'ADV': '#C6E6FF', 'ADJ': '#D6E6FF',
+                                    'PRO': '#B6E6FF', 'DET': '#A6FFE6', 'PRE': '#F8F8F8', 'CON': '#A6FFA6', 'INT': '#A6FFE6'
+                                }
+                            }
+                        },
+                        'highContrast': {
+                            phonemes: ["#0000FF", "#FF0000", "#00FF00", "#FF8000", "#8000FF", "#FFFF00", "#FF00FF", "#000000"],
+                            syllables: ["#0000FF", "#FF0000"],
+                            words: ["#000000", "#FF0000"],
+                            lines: ["#000000", "#FF0000"],
+                            letters: ["#0000FF", "#FF0000", "#00FF00", "#FF8000"],
+                            vowels: "#8000FF", consonants: "#0000FF", silent: "#808080", punctuation: "#FF00FF",
+                            grammar: {
+                                'NOM': '#0000FF', 'VER': '#FF0000', 'ADJ': '#00FF00', 'ADV': '#FF8000',
+                                'PRO': '#8000FF', 'DET': '#FFFF00', 'PRE': '#000000', 'CON': '#FF00FF', 'INT': '#FF00FF'
+                            },
+                            highlight: {
+                                phonemes: ["#E6E6FF", "#FFE6E6", "#E6FFE6", "#FFE6D6", "#F0E6FF", "#FFFFE6", "#FFE6FF", "#F8F8F8"],
+                                syllables: ["#E6E6FF", "#FFE6E6"],
+                                words: ["#F8F8F8", "#FFE6E6"],
+                                lines: ["#F8F8F8", "#FFE6E6"],
+                                letters: ["#E6E6FF", "#FFE6E6", "#E6FFE6", "#FFE6D6"],
+                                vowels: "#F0E6FF", consonants: "#E6E6FF", silent: "#D3D3D3", punctuation: "#FFE6FF",
+                                grammar: {
+                                    'NOM': '#E6E6FF', 'VER': '#FFE6E6', 'ADJ': '#E6FFE6', 'ADV': '#FFE6D6',
+                                    'PRO': '#F0E6FF', 'DET': '#FFFFE6', 'PRE': '#F8F8F8', 'CON': '#FFE6FF', 'INT': '#FFE6FF'
+                                }
+                            }
+                        }
+                    };
+
+                    // Helper to get palette based on name
+                    function getPaletteInline(name) {
+                        return PALETTES_INLINE[name] || PALETTES_INLINE['default'];
+                    }
+
+                    // Inline ColorizationEngine (no eval needed)
+                    var ColorizationEngine = {
+                        // Dynamic palette getter based on config
+                        getPalette: function(paletteName, useHighlighting, paletteKey) {
+                            var palette = getPaletteInline(paletteName);
+                            if (useHighlighting && palette.highlight && palette.highlight[paletteKey]) {
+                                return palette.highlight[paletteKey];
+                            }
+                            return palette[paletteKey];
+                        },
+                        normalizeGrammarCategory: function(category) {
+                            if (!category) return null;
+                            var baseCategory = category.split(':')[0];
+                            switch (baseCategory) {
+                                case 'ART': return 'DET';
+                                case 'AUX': return 'VER';
+                                case 'ONO': return 'INT';
+                                case 'PRP': return 'PRE';
+                                default: return baseCategory;
+                            }
+                        },
+                        hashCode: function(str) {
+                            var hash = 0;
+                            for (var i = 0; i < str.length; i++) {
+                                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                            }
+                            return hash;
+                        },
+                        lineColors: ["#FFFACD", "#E0F0FF"],
                         processModel: function (model, config) {
                             var processedModel = JSON.parse(JSON.stringify(model));
                             var wordMap = null;
@@ -1378,14 +1681,36 @@
                             var originalText = run.text;
                             var engine = LinguisticEngine;
                             var newRuns = [];
+                            
+                            // Extract palette and highlighting settings from config
+                            var paletteName = (config.options && config.options.colorPalette) || 'default';
+                            var useHighlighting = config.options && config.options.useHighlighting;
+                            
                             var addSegment = function (text, color, extraFormatting) {
                                 extraFormatting = extraFormatting || {};
                                 var formatting = {};
                                 for (var key in run.formatting) { formatting[key] = run.formatting[key]; }
-                                formatting.color = (color === undefined) ? run.formatting.color : color;
+                                
+                                if (color !== null && color !== undefined) {
+                                    if (useHighlighting) {
+                                        formatting.backgroundColor = color;
+                                        formatting.color = '#000000';
+                                    } else {
+                                        formatting.color = color;
+                                    }
+                                } else {
+                                    formatting.color = (color === undefined) ? run.formatting.color : null;
+                                }
+                                
                                 for (var key in extraFormatting) { formatting[key] = extraFormatting[key]; }
                                 newRuns.push({ text: text, formatting: formatting });
                             };
+                            
+                            // Helper to get palette colors based on current settings
+                            var getPal = function(paletteKey) {
+                                return ColorizationEngine.getPalette(paletteName, useHighlighting, paletteKey);
+                            };
+                            
                             if (config.mode === 'grammar') {
                                 var words = originalText.split(/(\P{L}+)/u);
                                 words.forEach(function (token) {
@@ -1397,8 +1722,11 @@
                                         var lemma = engine.lemmatize(lowerWord, wordMap);
                                         grammar = wordMap.get(lemma);
                                     }
+                                    // Normalize grammar category (ADJ:dem -> ADJ, AUX -> VER, etc.)
+                                    var normalizedGrammar = ColorizationEngine.normalizeGrammarCategory(grammar);
                                     var color = null;
-                                    if (grammar && ColorizationEngine.palettes.grammar[grammar]) color = ColorizationEngine.palettes.grammar[grammar];
+                                    if (normalizedGrammar && getPal('grammar')[normalizedGrammar]) 
+                                        color = getPal('grammar')[normalizedGrammar];
                                     addSegment(token, color);
                                 });
                             } else if (config.mode === 'phonemes' || config.mode === 'alternphonemes') {
@@ -1413,11 +1741,11 @@
                                         analysis.phonemes.forEach(function (p, idx) {
                                             var color;
                                             if (config.mode === 'alternphonemes') {
-                                                color = ColorizationEngine.palettes.phonemes[phonemeCount % ColorizationEngine.palettes.phonemes.length];
+                                                color = getPal('phonemes')[phonemeCount % getPal('phonemes').length];
                                                 phonemeCount++;
                                             } else {
-                                                var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % ColorizationEngine.palettes.phonemes.length;
-                                                color = ColorizationEngine.palettes.phonemes[colorIndex];
+                                                var colorIndex = Math.abs(ColorizationEngine.hashCode(p.toLowerCase())) % getPal('phonemes').length;
+                                                color = getPal('phonemes')[colorIndex];
                                             }
                                             addSegment(p, color);
                                         });
@@ -1432,8 +1760,8 @@
                                         var syllables = engine.segmentSyllables(token);
                                         if (!syllables) { addSegment(token, null); return; }
                                         syllables.forEach(function (s, idx) {
-                                            var color = ColorizationEngine.palettes.syllables[idx % ColorizationEngine.palettes.syllables.length];
-                                            var extra = (config.options && config.options.showArcs) ? { showArc: true } : {};
+                                            var color = getPal('syllables')[idx % getPal('syllables').length];
+                                            var extra = (config.options && config.options.showArcs) ? { underline: 2 } : {};
                                             addSegment(s, color, extra);
                                         });
                                     } catch (e) { addSegment(token, null); }
@@ -1444,7 +1772,7 @@
                                     var char = originalText.charAt(i);
                                     if (engine.isPunctuation(char) || /^\s$/.test(char)) { addSegment(char, null); }
                                     else {
-                                        var color = ColorizationEngine.palettes.letters[letterCount % ColorizationEngine.palettes.letters.length];
+                                        var color = getPal('letters')[letterCount % getPal('letters').length];
                                         addSegment(char, color);
                                         letterCount++;
                                     }
@@ -1455,7 +1783,7 @@
                                 words.forEach(function (token) {
                                     if (/^\s+$/.test(token) || token === "") { addSegment(token, null); }
                                     else {
-                                        var color = ColorizationEngine.palettes.words[wordIdx % ColorizationEngine.palettes.words.length];
+                                        var color = getPal('words')[wordIdx % getPal('words').length];
                                         addSegment(token, color);
                                         wordIdx++;
                                     }
@@ -1464,8 +1792,8 @@
                                 for (var i = 0; i < originalText.length; i++) {
                                     var char = originalText.charAt(i);
                                     var color = null;
-                                    if (config.mode === 'vowels' && engine.isVowel(char)) color = ColorizationEngine.palettes.vowels;
-                                    else if (config.mode === 'consonants' && engine.isConsonant(char)) color = ColorizationEngine.palettes.consonants;
+                                    if (config.mode === 'vowels' && engine.isVowel(char)) color = getPal('vowels');
+                                    else if (config.mode === 'consonants' && engine.isConsonant(char)) color = getPal('consonants');
                                     addSegment(char, color);
                                 }
                             } else if (config.mode === 'letters' && config.options && config.options.targetLetters) {
@@ -1475,7 +1803,7 @@
                                     var color = null;
                                     if (targets.indexOf(char.toLowerCase()) !== -1) {
                                         var tIdx = targets.indexOf(char.toLowerCase());
-                                        color = ColorizationEngine.palettes.phonemes[tIdx % ColorizationEngine.palettes.phonemes.length];
+                                        color = getPal('phonemes')[tIdx % getPal('phonemes').length];
                                     }
                                     addSegment(char, color);
                                 }
@@ -1491,7 +1819,7 @@
                                         for (var i = 0; i < token.length; i++) {
                                             if (silentIndices.indexOf(i) !== -1) {
                                                 if (i > lastIdx) addSegment(token.substring(lastIdx, i), null);
-                                                addSegment(token.charAt(i), ColorizationEngine.palettes.silent);
+                                                addSegment(token.charAt(i), getPal('silent'));
                                                 lastIdx = i + 1;
                                             }
                                         }

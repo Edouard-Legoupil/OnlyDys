@@ -121,8 +121,11 @@
                         if (run.formatting && run.formatting.backgroundColor) {
                             span.style.backgroundColor = run.formatting.backgroundColor;
                         }
-                        if (run.formatting && run.formatting.showArc) {
-                            span.style.borderBottom = `2px solid ${run.formatting.color || '#000'}`;
+                        // Check for both showArc flag and underline formatting
+                        if (run.formatting && (run.formatting.showArc || run.formatting.underline === 2)) {
+                            // Use backgroundColor if highlighting, otherwise use color
+                            const arcColor = run.formatting.backgroundColor || run.formatting.color || '#000';
+                            span.style.borderBottom = `2px solid ${arcColor}`;
                             span.style.borderRadius = "0 0 10px 10px";
                             span.style.paddingBottom = "2px";
                             span.style.display = "inline-block";

@@ -319,7 +319,7 @@
             carousel.innerHTML = '';
 
             // Get actual palette data from ColorizationEngine if available
-            const palettes = window.ColorizationEngine ? window.ColorizationEngine.PALETES : null;
+            const palettes = window.ColorizationEngine ? window.ColorizationEngine.PALETTES : null;
 
             // Create a card for each palette
             Object.keys(this.paletteDefinitions).forEach(paletteKey => {
@@ -330,18 +330,47 @@
                     card.classList.add('selected');
                 }
 
-                // Get colors to display based on mode
-                const colorsToShow = this.getPaletteColorsForMode(paletteKey, currentMode, useHighlighting, palettes);
+                // Get colors AND labels to display based on mode
+                const legendItems = this.getLegendItemsForMode(paletteKey, currentMode, useHighlighting, palettes);
 
-                // Create preview swatches
+                // Create legend preview
                 const preview = document.createElement('div');
                 preview.className = 'palette-preview';
-                colorsToShow.forEach(color => {
-                    const swatch = document.createElement('div');
-                    swatch.className = 'palette-color-swatch';
-                    swatch.style.backgroundColor = color;
-                    preview.appendChild(swatch);
-                });
+                
+                // If we have legend items with labels, show them
+                if (legendItems.length > 0 && legendItems[0].label) {
+                    legendItems.forEach(item => {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'palette-legend-item';
+                        legendItem.style.display = 'flex';
+                        legendItem.style.alignItems = 'center';
+                        legendItem.style.marginBottom = '2px';
+                        
+                        const swatch = document.createElement('div');
+                        swatch.className = 'palette-color-swatch';
+                        swatch.style.backgroundColor = item.color;
+                        swatch.style.flexShrink = '0';
+                        legendItem.appendChild(swatch);
+                        
+                        const label = document.createElement('span');
+                        label.className = 'palette-legend-label';
+                        label.textContent = item.label || '';
+                        label.style.fontSize = '0.65em';
+                        label.style.marginLeft = '4px';
+                        label.style.whiteSpace = 'nowrap';
+                        legendItem.appendChild(label);
+                        
+                        preview.appendChild(legendItem);
+                    });
+                } else {
+                    // Fallback to simple color swatches
+                    legendItems.forEach(item => {
+                        const swatch = document.createElement('div');
+                        swatch.className = 'palette-color-swatch';
+                        swatch.style.backgroundColor = item.color || item;
+                        preview.appendChild(swatch);
+                    });
+                }
                 card.appendChild(preview);
 
                 // Add name
@@ -373,6 +402,112 @@
             if (window.logger) {
                 window.logger.info("Palette carousel rendered with mode: " + currentMode + ", palette: " + currentPalette);
             }
+        },
+
+        // Get legend items (with color and label) for a specific mode
+        getLegendItemsForMode: function (paletteKey, mode, useHighlighting, palettes) {
+            if (palettes && palettes[paletteKey]) {
+                const palette = palettes[paletteKey];
+                const paletteToUse = useHighlighting && palette.highlight ? palette.highlight : palette;
+                
+                // Map of mode to legend definition
+                const legendDefinitions = {
+                    'grammar': {
+                        // Get grammar categories with French names
+                        items: () => {
+                            const grammarPal = paletteToUse.grammar || {};
+                            const categoryNames = {
+                                'NOM': 'Nom',
+                                'VER': 'Verbe',
+                                'ADJ': 'Adj.',
+                                'ADV': 'Adv.',
+                                'PRO': 'Pron.',
+                                'DET': 'Déterminant',
+                                'PRE': 'Prép.',
+                                'CON': 'Conj.',
+                                'INT': 'Interj.'
+                            };
+                            return Object.entries(grammarPal).map(([cat, color]) => ({
+                                color: color,
+                                label: categoryNames[cat] || cat
+                            }));
+                        }
+                    },
+                    'phonemes': {
+                        items: () => [
+                            { color: paletteToUse.phonemes[0], label: 'Phon. 1' },
+                            { color: paletteToUse.phonemes[1], label: 'Phon. 2' },
+                            { color: paletteToUse.phonemes[2], label: 'Phon. 3' }
+                        ]
+                    },
+                    'alternphonemes': {
+                        items: () => [
+                            { color: paletteToUse.phonemes[0], label: 'Phon. 1' },
+                            { color: paletteToUse.phonemes[1], label: 'Phon. 2' },
+                            { color: paletteToUse.phonemes[2], label: 'Phon. 3' }
+                        ]
+                    },
+                    'syllables': {
+                        items: () => [
+                            { color: paletteToUse.syllables[0], label: 'Syll. 1' },
+                            { color: paletteToUse.syllables[1], label: 'Syll. 2' }
+                        ]
+                    },
+                    'letters': {
+                        items: () => [
+                            { color: paletteToUse.letters[0], label: 'Lettre 1' },
+                            { color: paletteToUse.letters[1], label: 'Lettre 2' },
+                            { color: paletteToUse.letters[2], label: 'Lettre 3' }
+                        ]
+                    },
+                    'words': {
+                        items: () => [
+                            { color: paletteToUse.words[0], label: 'Mot 1' },
+                            { color: paletteToUse.words[1], label: 'Mot 2' }
+                        ]
+                    },
+                    'alternmots': {
+                        items: () => [
+                            { color: paletteToUse.words[0], label: 'Mot 1' },
+                            { color: paletteToUse.words[1], label: 'Mot 2' }
+                        ]
+                    },
+                    'silent': {
+                        items: () => [
+                            { color: paletteToUse.silent || '#808080', label: 'Silenc.' }
+                        ]
+                    },
+                    'alternlettres': {
+                        items: () => [
+                            { color: paletteToUse.silent || '#808080', label: 'Silenc.' }
+                        ]
+                    },
+                    'vowels': {
+                        items: () => [
+                            { color: paletteToUse.vowels || '#E377C2', label: 'Voyelle' }
+                        ]
+                    },
+                    'consonants': {
+                        items: () => [
+                            { color: paletteToUse.consonants || '#2B83BA', label: 'Consonne' }
+                        ]
+                    },
+                    'alternlines': {
+                        items: () => window.ColorizationEngine && window.ColorizationEngine.lineColors ? [
+                            { color: window.ColorizationEngine.lineColors[0], label: 'Ligne 1' },
+                            { color: window.ColorizationEngine.lineColors[1], label: 'Ligne 2' }
+                        ] : []
+                    }
+                };
+                
+                const legendDef = legendDefinitions[mode];
+                if (legendDef && legendDef.items) {
+                    return legendDef.items().slice(0, 5); // Limit to 5 items
+                }
+            }
+            
+            // Fallback: return colors without labels
+            return this.getPaletteColorsForMode(paletteKey, mode, useHighlighting, palettes).map(color => ({ color: color }));
         },
 
         // Get colors to display based on mode

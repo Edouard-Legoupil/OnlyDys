@@ -56,17 +56,17 @@
             },
             // Highlighting variants (lighter versions)
             highlight: {
-                phonemes: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6", "#E6FFE6", "#FFFFE6", "#FFE6F5", "#E6E6FF"],
-                syllables: ["#FFEEEE", "#E6F5FF"],
-                words: ["#E6E6FF", "#E6F5FF"],
-                letters: ["#FFEEEE", "#E6F5FF", "#E6FFEE", "#FFECE6"],
-                vowels: "#FFE6F5",
-                consonants: "#E6F5FF",
+                phonemes: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC", "#E6F9FF", "#F5E6D3", "#F2E6FF", "#F0F0F0"],
+                syllables: ["#FFE6E6", "#E6F2FF"],
+                words: ["#F0F0F0", "#E6F2FF"],
+                letters: ["#FFE6E6", "#E6F2FF", "#E6F9E6", "#FFE6CC"],
+                vowels: "#F2E6FF",
+                consonants: "#E6F2FF",
                 silent: "#F0F0F0",
-                punctuation: "#FFE6F5",
+                punctuation: "#F2E6FF",
                 grammar: {
-                    'NOM': '#FFEEEE', 'VER': '#E6F5FF', 'ADJ': '#E6FFEE', 'ADV': '#E6FFE6',
-                    'PRO': '#FFECE6', 'DET': '#FFFFE6', 'PRE': '#E6E6FF', 'CON': '#FFE6D3', 'INT': '#FFE6F5'
+                    'NOM': '#FFE6E6', 'VER': '#E6F2FF', 'ADJ': '#E6F9FF', 'ADV': '#E6F9E6',
+                    'PRO': '#FFE6CC', 'DET': '#F2E6FF', 'PRE': '#F0F0F0', 'CON': '#F5E6D3', 'INT': '#F2E6FF'
                 }
             }
         },
@@ -343,12 +343,46 @@
         return list;
     }
 
+    /**
+     * Normalizes grammatical category for palette lookup.
+     * The dictionary contains detailed categories (ADJ:dem, PRO:per, ART:def, AUX, ONO)
+     * but the palette only has top-level categories (NOM, VER, ADJ, ADV, PRO, DET, PRE, CON, INT).
+     * This function maps detailed categories to their top-level equivalents.
+     * 
+     * @param {string} category - Raw grammar category from dictionary
+     * @returns {string|null} Normalized category for palette lookup
+     */
+    function normalizeGrammarCategory(category) {
+        if (!category) return null;
+        
+        // Remove suffix variants (ADJ:dem -> ADJ, PRO:per -> PRO, etc.)
+        const baseCategory = category.split(':')[0];
+        
+        // Map subcategories to palette categories
+        switch (baseCategory) {
+            case 'ART':
+                return 'DET'; // Articles are a subset of Determiners
+            case 'AUX':
+                return 'VER'; // Auxiliary verbs are verbs
+            case 'ONO':
+                return 'INT'; // Onomatopoeia/Words -> Interjection
+            case 'PRP':
+                return 'PRE'; // Preposition
+            default:
+                // Return the base category (NOM, VER, ADJ, ADV, PRO, CON, INT, DET, PRE)
+                return baseCategory;
+        }
+    }
+
     const ColorizationEngine = {
         /**
          * DEFAULT PALETTES - Now using palette system
          */
         PALETTES: PALETTES,
         palettes: PALETTES.default,
+        
+        // Grammar category normalization for palette lookup
+        normalizeGrammarCategory: normalizeGrammarCategory,
         highlightPalettes: PALETTES.default.highlight,
 
         // Legacy compatibility - point to current palette
@@ -510,9 +544,12 @@
                         grammar = wordMap.get(lemma);
                     }
 
+                    // Normalize grammar category (ADJ:dem -> ADJ, AUX -> VER, etc.)
+                    const normalizedGrammar = normalizeGrammarCategory(grammar);
+
                     let color = null;
-                    if (grammar && grammarPalette[grammar]) {
-                        color = grammarPalette[grammar];
+                    if (normalizedGrammar && grammarPalette[normalizedGrammar]) {
+                        color = grammarPalette[normalizedGrammar];
                     }
                     addSegment(token, color);
                 });

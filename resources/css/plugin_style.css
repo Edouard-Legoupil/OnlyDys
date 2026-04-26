@@ -511,6 +511,20 @@ button:hover {
     height: 18px;
     border-radius: 3px;
     border: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.palette-legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.palette-legend-label {
+    font-size: 0.65em;
+    color: #666;
+    margin-left: 4px;
+    white-space: nowrap;
 }
 
 .palette-name {
