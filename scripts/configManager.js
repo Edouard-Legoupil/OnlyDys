@@ -5,7 +5,8 @@
         config: {
             mode: 'syllables',
             showArcs: false,
-            highlightSilent: false
+            highlightSilent: false,
+            suggestionDebounceMs: 150  // Default debounce delay in milliseconds
         },
 
         init: function () {
@@ -133,33 +134,80 @@
             if (!previewEl) return;
 
             const text = "L'oiseau chante sur la branche.";
+
+            // Build config with options for preview
+            const previewConfig = {
+                ...this.config,
+                options: {
+                    ...(this.config.options || {}),
+                    showArcs: this.config.showArcs,
+                    useHighlighting: false // Text color mode for preview
+                }
+            };
+
             // Run logic on sample text.
-            // We need a dummy model run.
             const dummyModel = {
                 paragraphs: [{
                     textRuns: [{ text: text, formatting: { color: "#000000" } }]
                 }]
             };
 
-            const processed = window.ColorizationEngine.processModel(dummyModel, this.config);
+            const processed = window.ColorizationEngine.processModel(dummyModel, previewConfig);
 
             // Render HTML from model
             let html = "";
             processed.paragraphs[0].textRuns.forEach(run => {
                 const color = run.formatting.color || "#000000";
-                html += `<span style="color: ${color}">${run.text}</span>`;
+                const background = run.formatting.backgroundColor || "transparent";
+                const underline = run.formatting.underline;
+                
+                let style = `color: ${color}; background-color: ${background}`;
+                
+                // Add underline style for arcs (simulate with border-bottom in preview)
+                if (underline) {
+                    // Map underline style to border for visualization
+                    style += `; border-bottom: 2px solid ${color}; padding-bottom: 2px;`;
+                }
+                
+                html += `<span style="${style}">${this.escapeHtml(run.text)}</span>`;
             });
 
             previewEl.innerHTML = html;
+        },
+
+        /**
+         * Escape HTML special characters for safe rendering
+         * 
+         * @param {string} text - Text to escape
+         * @returns {string} Escaped text
+         */
+        escapeHtml: function (text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         },
 
         applyToDocument: function () {
             const statusEl = document.getElementById('ling-status');
             if (statusEl) statusEl.textContent = "Processing...";
 
+            // Build config with options for colorization engine
+            const colorizationConfig = {
+                ...this.config,
+                options: {
+                    ...(this.config.options || {}),
+                    // Pass showArcs to options for syllables mode
+                    showArcs: this.config.showArcs
+                }
+            };
+
             window.SelectionManager.getCurrentSelectionModel()
                 .then(model => {
-                    const processed = window.ColorizationEngine.processModel(model, this.config);
+                    const processed = window.ColorizationEngine.processModel(model, colorizationConfig);
                     return window.SelectionManager.applyChanges(processed);
                 })
                 .then(() => {

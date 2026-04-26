@@ -1,6 +1,6 @@
 // scripts/ui.js
 
-(function(window) {
+(function (window) {
     'use strict';
 
     const ui = {};
@@ -15,10 +15,10 @@
         pictogramContainer.innerHTML = '<span>Chargement du pictogramme...</span>';
         modal.style.display = 'block';
 
-        closeButton.onclick = function() {
+        closeButton.onclick = function () {
             modal.style.display = 'none';
         }
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target == modal) {
                 modal.style.display = 'none';
             }
@@ -33,9 +33,14 @@
         });
     }
 
-    ui.displaySuggestions = function(suggestions, motSaisi, append = false) {
+    ui.displaySuggestions = function (suggestions, motSaisi, append = false) {
+        if (window.logger) window.logger.info("UI: displaySuggestions called for '" + motSaisi + "' with " + suggestions.length + " items.");
+
         const container = document.getElementById('suggestions-container');
-        if (!container) return;
+        if (!container) {
+            if (window.logger) window.logger.error("UI: suggestions-container NOT FOUND");
+            return;
+        }
         if (!append) {
             container.innerHTML = '';
         }
@@ -44,22 +49,14 @@
             const card = document.createElement('div');
             card.className = 'suggestion-card';
             card.style.borderLeft = `5px solid ${confusion.color}`;
-            
+
             const confusionIcon = document.createElement('span');
             confusionIcon.className = 'confusion-icon';
             confusionIcon.textContent = confusion.icon;
-            
+
             const wordSpan = document.createElement('span');
             wordSpan.className = 'word';
             wordSpan.textContent = suggestion.w;
-
-            const readBtn = document.createElement('button');
-            readBtn.className = 'read-btn';
-            readBtn.innerHTML = '🔊';
-            readBtn.onclick = (e) => {
-                e.stopPropagation();
-                window.lireMot(suggestion.w);
-            };
 
             const replaceBtn = document.createElement('button');
             replaceBtn.className = 'replace-btn';
@@ -67,6 +64,14 @@
             replaceBtn.onclick = (e) => {
                 e.stopPropagation();
                 window.replaceWordInDocument(motSaisi, suggestion.w);
+            };
+
+            const readBtn = document.createElement('button');
+            readBtn.className = 'read-btn';
+            readBtn.innerHTML = '🔊';
+            readBtn.onclick = (e) => {
+                e.stopPropagation();
+                window.lireMot(suggestion.w);
             };
 
             const pictogramBtn = document.createElement('button');
@@ -87,48 +92,25 @@
 
             card.appendChild(confusionIcon);
             card.appendChild(wordSpan);
-            card.appendChild(readBtn);
             card.appendChild(replaceBtn);
             card.appendChild(pictogramBtn);
+            card.appendChild(readBtn);
             card.appendChild(illustration);
             container.appendChild(card);
         });
     };
 
-    window.replaceWordInDocument = function(wordToReplace, wordToInsert) {
-        window.Asc.plugin.executeMethod("Search", [{searchString: wordToReplace, matchCase: false}], function(ranges) {
-            if (ranges.length > 1) {
-                window.Asc.plugin.showQuestionWindow(
-                    "replace-all-question",
-                    `"${wordToReplace}" was found ${ranges.length} times. Do you want to replace all occurrences?`,
-                    ["Replace All", "Replace First", "Cancel"],
-                    function(answer) {
-                        if (answer === "Replace All") {
-                            window.Asc.plugin.executeMethod("SearchAndReplace", [{
-                                searchString: wordToReplace,
-                                replaceString: wordToInsert,
-                                matchCase: false,
-                                replaceAll: true
-                            }]);
-                        } else if (answer === "Replace First") {
-                             window.Asc.plugin.executeMethod("SearchAndReplace", [{
-                                searchString: wordToReplace,
-                                replaceString: wordToInsert,
-                                matchCase: false,
-                                replaceAll: false
-                            }]);
-                        }
-                    }
-                );
-            } else {
-                window.Asc.plugin.executeMethod("SearchAndReplace", [{
-                    searchString: wordToReplace,
-                    replaceString: wordToInsert,
-                    matchCase: false,
-                    replaceAll: false
-                }]);
-            }
-        });
+    window.replaceWordInDocument = function (wordToReplace, wordToInsert) {
+        if (window.logger) window.logger.info("UI: Requesting replacement of '" + wordToReplace + "' with '" + wordToInsert + "'");
+
+        // Delegate to main plugin script which has reliable API access
+        if (window.OnlyDys && window.OnlyDys.performReplacement) {
+            window.OnlyDys.performReplacement(wordToReplace, wordToInsert);
+        } else {
+            console.error("OnlyDys.performReplacement not found");
+            // Fallback to old search method if API bridge missing?
+            // For now, let's stick to the consolidation strategy.
+        }
     };
 
     window.OnlyDysUI = ui;

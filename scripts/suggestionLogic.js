@@ -5,6 +5,12 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
     let dictionary = [];
 
     logic.loadDictionary = async function () {
+        // Show loading overlay
+        const loadingEl = document.getElementById('loading-overlay');
+        if (loadingEl) {
+            loadingEl.style.display = 'block';
+        }
+        
         try {
             const response = await fetch('data/dictionary_full.json');
             if (!response.ok) {
@@ -14,6 +20,11 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
             logger.info('Dictionary loaded successfully', { wordCount: dictionary.length });
         } catch (error) {
             logger.error('Error loading dictionary:', error);
+        } finally {
+            // Hide loading overlay
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
         }
     };
 

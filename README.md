@@ -114,7 +114,36 @@ The plugin includes a suite of unit tests to ensure that the core logic is worki
 
 The OnlyDys plugin follows a modular architecture where different components handle specific linguistic and UI tasks.
 
-#### Component Diagram
+
+
+| Component | File Reference | Responsibility |
+| :--- | :--- | :--- |
+| **plugin.js** | [scripts/plugin.js](scripts/plugin.js) | The core orchestrator. Handles tab switching, initialization, and high-level command execution. |
+| **ConfigManager** | [scripts/configManager.js](scripts/configManager.js) | Manages user settings (mode, arcs, silent letters). Handles UI bindings for the settings tab and persistence. |
+| **SelectionManager** | [scripts/selectionManager.js](scripts/selectionManager.js) | Abstracts ONLYOFFICE document access. Converts selections into a structured JSON model and back. |
+| **LinguisticEngine** | [scripts/linguisticEngine.js](scripts/linguisticEngine.js) | The "brain" for French processing. Handles vowel/consonant detection, syllable splitting, and silent letter rules. |
+| **ColorizationEngine** | [scripts/colorizationEngine.js](scripts/colorizationEngine.js) | Bridge between linguistic analysis and visual formatting. Applies colors to the text model based on config. |
+| **OnlyDysStyles** | [scripts/styleManager.js](scripts/styleManager.js) | Specifically handles global document-wide formatting like the OpenDyslexic font, line height, and spacing. |
+| **OnlyDysDyslexia** | [scripts/dyslexia.js](scripts/dyslexia.js) | Implements the dyslexia simulation (scrambling letters) to help users empathize with dyslexic readers. |
+| **OnlyDysLogic** | [scripts/suggestionLogic.js](scripts/suggestionLogic.js) | Contains the algorithmic core for suggestions: phonetic coding, Levenshtein distance, and confusion classification. |
+| **OnlyDysUI** | [scripts/suggestionUI.js](scripts/suggestionUI.js) | Manages the dynamic creation of HTML elements for suggestions, including visual icons and read-aloud buttons. |
+| **Logger** | [scripts/logger.js](scripts/logger.js) | Provides centralized logging for debugging, with the ability to download logs via the "About" tab. |
+| **Pictogram Service** | [scripts/pictogramService.js](scripts/pictogramService.js) | Helper to fetch ARASAAC pictograms for words to provide visual aids. |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```mermaid
 classDiagram
@@ -223,17 +252,3 @@ classDiagram
 
     OnlyDysDyslexia --> AscPlugin : Replaces doc content
 ```
-
-| Component | File Reference | Responsibility |
-| :--- | :--- | :--- |
-| **plugin.js** | [scripts/plugin.js](scripts/plugin.js) | The core orchestrator. Handles tab switching, initialization, and high-level command execution. |
-| **ConfigManager** | [scripts/configManager.js](scripts/configManager.js) | Manages user settings (mode, arcs, silent letters). Handles UI bindings for the settings tab and persistence. |
-| **SelectionManager** | [scripts/selectionManager.js](scripts/selectionManager.js) | Abstracts ONLYOFFICE document access. Converts selections into a structured JSON model and back. |
-| **LinguisticEngine** | [scripts/linguisticEngine.js](scripts/linguisticEngine.js) | The "brain" for French processing. Handles vowel/consonant detection, syllable splitting, and silent letter rules. |
-| **ColorizationEngine** | [scripts/colorizationEngine.js](scripts/colorizationEngine.js) | Bridge between linguistic analysis and visual formatting. Applies colors to the text model based on config. |
-| **OnlyDysStyles** | [scripts/styleManager.js](scripts/styleManager.js) | Specifically handles global document-wide formatting like the OpenDyslexic font, line height, and spacing. |
-| **OnlyDysDyslexia** | [scripts/dyslexia.js](scripts/dyslexia.js) | Implements the dyslexia simulation (scrambling letters) to help users empathize with dyslexic readers. |
-| **OnlyDysLogic** | [scripts/suggestionLogic.js](scripts/suggestionLogic.js) | Contains the algorithmic core for suggestions: phonetic coding, Levenshtein distance, and confusion classification. |
-| **OnlyDysUI** | [scripts/suggestionUI.js](scripts/suggestionUI.js) | Manages the dynamic creation of HTML elements for suggestions, including visual icons and read-aloud buttons. |
-| **Logger** | [scripts/logger.js](scripts/logger.js) | Provides centralized logging for debugging, with the ability to download logs via the "About" tab. |
-| **Pictogram Service** | [scripts/pictogramService.js](scripts/pictogramService.js) | Helper to fetch ARASAAC pictograms for words to provide visual aids. |

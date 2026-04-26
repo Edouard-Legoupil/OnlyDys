@@ -235,6 +235,7 @@
             } else if (config.mode === 'syllables') {
                 const words = originalText.split(/(\P{L}+)/u).filter(t => t !== "");
                 const syllablesPalette = getPalette('syllables');
+                const showArcs = config.options && config.options.showArcs;
                 words.forEach(token => {
                     if (engine.isPunctuation(token) || /^\s+$/.test(token) || token === "") {
                         addSegment(token, null);
@@ -244,7 +245,13 @@
                     const syllables = engine.segmentSyllables(token);
                     syllables.forEach((s, idx) => {
                         const color = syllablesPalette[idx % syllablesPalette.length];
-                        const extra = (config.options && config.options.showArcs) ? { showArc: true } : {};
+                        // Add underline to simulate arc when showArcs is enabled
+                        const extra = {};
+                        if (showArcs) {
+                            // Use different underline styles for visual distinction
+                            // ONLYOFFICE supports: 0=none, 1=single, 2=double, 3=thick, 4=dotted, 5=dashed
+                            extra.underline = 2; // Double underline for arcs
+                        }
                         addSegment(s, color, extra);
                     });
                 });

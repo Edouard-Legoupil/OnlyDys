@@ -3,7 +3,8 @@
     const suggestionService = (function () {
         let pollingInterval = null;
         let lastCheckedText = "";
-        let mode = 'onthego'; // Default mode
+        let mode = 'selection'; // Default mode
+        let hasWarnedRestrictedMode = false;
 
         let modeToggle;
         let modeStatus;
@@ -23,6 +24,8 @@
                 words.forEach((motSaisi) => {
                     if (motSaisi.length > 2) {
                         const suggestions = window.OnlyDysLogic.classerSuggestions(motSaisi, motPrecedent);
+                        if (window.logger) window.logger.info("Suggestions for '" + motSaisi + "': " + suggestions.length);
+
                         if (suggestions.length > 0) {
                             const header = document.createElement('h4');
                             header.textContent = `Suggestions for "${motSaisi}"`;
@@ -37,77 +40,148 @@
             lastCheckedText = text;
         }
 
-        function stopPolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                pollingInterval = null;
-            }
-        }
+        let isActive = false;
 
-        function startPolling() {
-            stopPolling();
-            pollingInterval = setInterval(() => {
+        function onSelectionChanged() {
+            if (window.logger) window.logger.info("onSelectionChanged called. Mode: " + mode + ", isActive: " + isActive);
+            if (!isActive) return;
+
+            if (mode === 'onthego') {
+                // Init scope for test
+                Asc.scope.check = "init";
+
+                // Updated Logic for Text Capture (Intermediate Sanity)
+                // Updated Logic for Text Capture (Intermediate Sanity + Introspection)
                 window.Asc.plugin.callCommand(function () {
-                    var oDocument = Api.GetDocument();
-                    var oRange = oDocument.GetSelection();
-                    var text = "";
-
                     try {
-                        if (oRange && oRange.IsCollapsed && oRange.IsCollapsed()) {
-                            logger.info("Selection is collapsed. Trying to expand to word.");
-                            var originalStart = oRange.GetStart();
-                            var originalEnd = oRange.GetEnd();
+                        var oDocument = Api.GetDocument();
+                        if (!oDocument) return "CRASH: Api.GetDocument() returned null/undefined";
 
+                        // Check if GetSelection exists
+                        if (typeof oDocument.GetSelection !== 'function') {
+                            var docType = "unknown";
+                            try { docType = oDocument.GetClassType ? oDocument.GetClassType() : "no_GetClassType"; } catch (e) { }
+
+                            var keys = [];
+                            for (var k in oDocument) keys.push(k);
+
+                            // Deep Research: Check Api object itself
+                            var apiKeys = [];
+                            try { for (var k in Api) apiKeys.push(k); } catch (e) { }
+
+                            return "CRASH: GetSelection missing. DocType: " + docType + ". DocKeys: " + keys.slice(0, 20).join(',') + "... ApiKeys: " + apiKeys.slice(0, 20).join(',');
+                        }
+
+                        var oRange = oDocument.GetSelection();
+                        if (!oRange) return "NO_RANGE";
+
+                        var text = oRange.GetText();
+                        if (!text || text === "") {
                             oRange.ExpandToWord();
                             text = oRange.GetText();
-                            logger.info("Expanded to word: " + text);
-
-                            oRange.Select(originalStart, originalEnd);
-                        } else if (oRange) {
-                            text = oRange.GetText();
-                            logger.info("Got selected text: " + text);
+                            return "EXPANDED:" + (text || "EMPTY");
                         }
+                        return "SELECTED:" + text;
                     } catch (e) {
-                        logger.error("Error in startPolling callCommand: " + e.message);
-                        text = ""; // fallback to empty text
+                        return "CRASH:" + e.message;
                     }
-                    return text;
-                }, false, true, function (text) {
-                    if (text !== lastCheckedText) {
-                        logger.info("New text for suggestions: " + text);
-                        processSuggestions(text);
+                }, false, false, function (result) {
+                    if (window.logger) window.logger.info("Plugin.js: Capture result: " + result);
+
+                    if (result && typeof result === 'string') {
+                        if (result.startsWith("EXPANDED:") || result.startsWith("SELECTED:")) {
+                            var text = result.substring(result.indexOf(":") + 1);
+                            if (text !== "EMPTY") {
+                                processSuggestions(text);
+                            }
+                        } else if (result.startsWith("CRASH:")) {
+                            // Fallback for Markdown/Restricted modes where GetSelection is missing
+                            if (window.logger) window.logger.warn("Capture crashed (" + result + "). Falling back to GetCurrentWord/GetSelectedText.");
+
+                            // Attempt 1: GetCurrentWord (Better for on-the-go)
+                            window.Asc.plugin.executeMethod("GetCurrentWord", [], function (word) {
+                                if (word && typeof word === 'string' && word.trim().length > 0) {
+                                    if (window.logger) window.logger.info("Fallback: GetCurrentWord successful: " + word);
+                                    processSuggestions(word);
+                                } else {
+                                    // Attempt 2: GetSelectedText (Fallback to selection)
+                                    if (window.logger) window.logger.info("Fallback: GetCurrentWord failed/empty. Trying GetSelectedText.");
+
+                                    // One-time UI Warning only if BOTH fail to provide on-the-go experience,
+                                    // but effective check is if we are in onthego mode and can't get current word.
+                                    // If GetSelectedText works, user still has to select.
+                                    if (!suggestionService.hasWarnedRestrictedMode) {
+                                        suggestionService.hasWarnedRestrictedMode = true;
+                                        const container = document.getElementById('suggestions-container');
+                                        if (container) {
+                                            const warning = document.createElement('div');
+                                            warning.style.cssText = "background: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px; font-size: 12px;";
+                                            warning.innerHTML = "<strong>Detection Limitée</strong><br>Mode restreint : La détection automatique est limitée.<br>Si la détection au curseur échoue, sélectionnez le mot.";
+                                            container.prepend(warning);
+                                        }
+                                    }
+
+                                    window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                                        if (text) {
+                                            processSuggestions(text);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    } else if (result && result.text) {
+                        processSuggestions(result.text);
                     }
                 });
-            }, 1000);
+            } else {
+                // Selection mode
+                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                    if (window.logger) window.logger.info("Plugin.js: Selection Mode text: '" + text + "'");
+                    if (text) {
+                        const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
+                        processSuggestions(words);
+                    } else {
+                        // Log empty selection handling
+                        processSuggestions("");
+                    }
+                });
+            }
         }
 
         function updateMode() {
             if (modeToggle.checked) {
                 mode = 'onthego';
                 modeStatus.textContent = 'Au fur et à mesure';
-                startPolling();
+                // Create debounced version for on-the-go mode using global delay
+                createDebouncedOnSelectionChanged();
+                // Trigger immediate check (but subsequent calls will be debounced)
+                if (debouncedOnSelectionChanged) {
+                    debouncedOnSelectionChanged();
+                } else {
+                    onSelectionChanged();
+                }
             } else {
                 mode = 'selection';
                 modeStatus.textContent = 'Pour la sélection';
-                stopPolling();
-                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                    if (text) {
-                        const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
-                        processSuggestions(words);
-                    }
-                });
+                // For selection mode, call directly (no debouncing needed)
+                onSelectionChanged();
             }
         }
 
         function onVisibilityChange() {
             if (document.visibilityState === 'hidden') {
-                stopPolling();
+                // potentially pause or clear suggestions
             } else {
                 updateMode();
             }
         }
-        
+
+        // Current debounce delay in ms (can be configured)
+        let debounceDelay = 150;
+
         function start() {
+            if (window.logger) window.logger.info("Starting suggestionService.");
+            isActive = true;
             modeToggle = document.getElementById('toggle-suggestion-mode');
             modeStatus = document.getElementById('suggestion-mode-status');
             modeToggle.addEventListener('change', updateMode);
@@ -116,26 +190,120 @@
         }
 
         function stop() {
-            stopPolling();
-            if(modeToggle) {
+            if (window.logger) window.logger.info("Stopping suggestionService.");
+            isActive = false;
+            // Clear any pending debounced calls
+            clearTimeout(debounceTimeout);
+            debounceTimeout = null;
+            // Clear the debounced function reference
+            debouncedOnSelectionChanged = null;
+            
+            if (modeToggle) {
                 modeToggle.removeEventListener('change', updateMode);
             }
             document.removeEventListener('visibilitychange', onVisibilityChange);
         }
 
+        // Method to update debounce delay
+        function setDebounceDelay(delay) {
+            debounceDelay = delay || 0;
+            // Recreate debounced function with new delay
+            debouncedOnSelectionChanged = null;
+            if (window.logger) window.logger.info("Debounce delay updated to: " + delay + "ms");
+        }
+
+        // Method to get current debounce delay
+        function getDebounceDelay() {
+            return debounceDelay;
+        }
+
         return {
             start: start,
-            stop: stop
+            stop: stop,
+            handleSelectionChange: onSelectionChanged,
+            get hasWarnedRestrictedMode() { return hasWarnedRestrictedMode; },
+            set hasWarnedRestrictedMode(v) { hasWarnedRestrictedMode = v; }
         };
     })();
 
+    // Global debounce timeout reference for cleanup
+    let debounceTimeout = null;
+    let globalDebounceDelay = 150; // Default delay
+
     // Function to debounce calls to the suggestion logic
+    // Prevents rapid-fire API calls during cursor movement in on-the-go mode
     function debounce(func, delay) {
         let timeout;
         return function (...args) {
             clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
+            timeout = setTimeout(() => {
+                debounceTimeout = null;
+                func.apply(this, args);
+            }, delay);
+            // Store reference for global cleanup
+            debounceTimeout = timeout;
         };
+    }
+
+    // Global debounced onSelectionChanged function
+    let debouncedOnSelectionChanged = null;
+
+    // Function to create debounced onSelectionChanged with current delay
+    function createDebouncedOnSelectionChanged() {
+        // Ensure we have the latest debounce delay from config
+        initDebounceFromConfig();
+        
+        if (suggestionService && suggestionService.handleSelectionChange) {
+            debouncedOnSelectionChanged = debounce(
+                suggestionService.handleSelectionChange, 
+                globalDebounceDelay
+            );
+        }
+        return debouncedOnSelectionChanged;
+    }
+
+    // Function to update global debounce delay
+    function setGlobalDebounceDelay(delay) {
+        globalDebounceDelay = delay || 150;
+        // Recreate debounced function with new delay
+        debouncedOnSelectionChanged = null;
+        if (window.logger) window.logger.info("Global debounce delay updated to: " + globalDebounceDelay + "ms");
+        
+        // Also update ConfigManager if available
+        if (window.ConfigManager && window.ConfigManager.config) {
+            window.ConfigManager.config.suggestionDebounceMs = globalDebounceDelay;
+            window.ConfigManager.save();
+        }
+    }
+
+    // Function to initialize debounce delay from ConfigManager
+    function initDebounceFromConfig() {
+        if (window.ConfigManager && window.ConfigManager.config) {
+            if (typeof window.ConfigManager.config.suggestionDebounceMs !== 'undefined') {
+                globalDebounceDelay = window.ConfigManager.config.suggestionDebounceMs;
+                if (window.logger) window.logger.info("Initialized debounce delay from config: " + globalDebounceDelay + "ms");
+            } else {
+                // Set default if not present
+                window.ConfigManager.config.suggestionDebounceMs = globalDebounceDelay;
+                window.ConfigManager.save();
+            }
+        }
+    }
+
+    // Initialize debounce delay when ConfigManager is loaded
+    if (window.ConfigManager) {
+        initDebounceFromConfig();
+    } else {
+        // ConfigManager may not be loaded yet, try again later
+        const initInterval = setInterval(() => {
+            if (window.ConfigManager) {
+                initDebounceFromConfig();
+                clearInterval(initInterval);
+            }
+        }, 100);
+        
+        // Clear interval after a timeout
+        setTimeout(() => clearInterval(initInterval), 5000);
     }
 
     // Function to switch tabs
@@ -718,6 +886,25 @@
             applyLinguisticsToDocument();
             updateLingPreview();
         });
+        
+        // Bind debounce delay input
+        const debounceInput = document.getElementById('debounce-delay');
+        if (debounceInput) {
+            // Initialize from global setting
+            debounceInput.value = globalDebounceDelay;
+            
+            // Update global setting when changed
+            debounceInput.addEventListener('change', function () {
+                const delay = parseInt(this.value) || 0;
+                setGlobalDebounceDelay(delay);
+            });
+            
+            // Update config if changed elsewhere
+            debounceInput.addEventListener('input', function () {
+                const delay = parseInt(this.value) || 0;
+                setGlobalDebounceDelay(delay);
+            });
+        }
 
         function updateInterfaceVisibility() {
             const mode = document.querySelector('input[name="ling-mode"]:checked')?.value;
@@ -1479,27 +1666,164 @@
 
 
     let isInitialized = false;
-    window.Asc.plugin.init = function () {
-        if (isInitialized) return;
-        isInitialized = true;
+    window.Asc.plugin.init = function (text) {
+        if (window.logger) window.logger.info("Init called. Text len: " + (text ? text.length : 0) + ", isInit: " + isInitialized);
 
-        window.OnlyDysLogic.loadDictionary().then(() => {
-            logger.info('Dictionary loaded, initializing tabs.');
-        });
+        // Show loading overlay during initialization
+        const loadingEl = document.getElementById('loading-overlay');
+        if (loadingEl) {
+            loadingEl.style.display = 'block';
+        }
 
-        const tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                loadTab(button.dataset.tab);
+        if (!isInitialized) {
+            isInitialized = true;
+
+            window.OnlyDysLogic.loadDictionary().then(() => {
+                logger.info('Dictionary loaded, initializing tabs.');
+            }).catch(error => {
+                logger.error('Failed to load dictionary:', error);
+            }).finally(() => {
+                // Hide loading overlay after dictionary loads or fails
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
             });
-        });
 
-        loadTab('suggestions');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    loadTab(button.dataset.tab);
+                });
+            });
+
+            loadTab('suggestions');
+
+            // Explicitly attach events as a fallback/primary method
+            if (window.Asc.plugin.attachEvent) {
+                window.Asc.plugin.attachEvent("onTranslateSelection", window.Asc.plugin.event_onTranslateSelection);
+                window.Asc.plugin.attachEvent("onTargetPositionChanged", window.Asc.plugin.event_onTranslateSelection);
+                if (window.logger) window.logger.info("Events attached via attachEvent.");
+            } else {
+                if (window.logger) window.logger.warn("window.Asc.plugin.attachEvent is not available.");
+            }
+        }
+
+        // Always handle selection change on init (re-entry)
+        // If text is provided by init, we can use it, or just trigger the handler to fetch fresh connection
+        if (suggestionService && suggestionService.handleSelectionChange) {
+            suggestionService.handleSelectionChange();
+        }
+    };
+
+    // Public API for UI to call
+    window.OnlyDys = window.OnlyDys || {};
+    window.OnlyDys.performReplacement = function (wordToReplace, wordToInsert) {
+        if (window.logger) window.logger.info("Plugin.js: performing replacement of " + wordToReplace + " -> " + wordToInsert);
+        Asc.scope.wordToReplace = wordToReplace;
+        Asc.scope.wordToInsert = wordToInsert;
+
+        window.Asc.plugin.callCommand(function () {
+            try {
+                var oDocument = Api.GetDocument();
+                // Check valid object
+                if (!oDocument || typeof oDocument.GetSelection !== 'function') {
+                    return JSON.stringify({ status: "crash", error: "GetSelection missing" });
+                }
+
+                var oRange = oDocument.GetSelection();
+                if (!oRange) return JSON.stringify({ status: "no_range" });
+
+                var currentText = oRange.GetText();
+
+                // 1. Direct match
+                if (currentText && currentText.trim().toLowerCase() === Asc.scope.wordToReplace.trim().toLowerCase()) {
+                    oRange.SetText(Asc.scope.wordToInsert);
+                    return JSON.stringify({ status: "replaced_selection" });
+                }
+
+                // 2. Expand
+                oRange.ExpandToWord();
+                currentText = oRange.GetText();
+
+                if (currentText && currentText.trim().toLowerCase() === Asc.scope.wordToReplace.trim().toLowerCase()) {
+                    oRange.SetText(Asc.scope.wordToInsert);
+                    return JSON.stringify({ status: "replaced_expansion" });
+                }
+
+                return JSON.stringify({ status: "no_match", found: currentText });
+            } catch (e) {
+                return JSON.stringify({ status: "crash", error: e.message });
+            }
+        }, false, false, function (result) {
+            if (window.logger) window.logger.info("Plugin.js: Replacement result: " + result);
+
+            var status = "unknown";
+            try {
+                var json = JSON.parse(result);
+                status = json.status;
+            } catch (e) { /* ignore parse error for crash strings */ }
+
+            if (status === "crash" || status === "error" || (typeof result === 'string' && result.indexOf("CRASH:") !== -1)) {
+                if (window.logger) window.logger.warn("Context replacement failed/crashed. Falling back to PasteText.");
+                // Fallback: Just paste (assumes selection is active foundation from capture fallback)
+                window.Asc.plugin.executeMethod("PasteText", [wordToInsert]);
+            }
+        });
+    };
+
+    // Updated Logic for Text Capture (Intermediate Sanity)
+    window.Asc.plugin.callCommand(function () {
+        try {
+            var oDocument = Api.GetDocument();
+            var oRange = oDocument.GetSelection();
+
+            if (!oRange) return "NO_RANGE";
+
+            // Just try to get text simple first
+            var text = oRange.GetText();
+            if (!text || text === "") {
+                oRange.ExpandToWord();
+                text = oRange.GetText();
+                return "EXPANDED:" + (text || "EMPTY");
+            }
+            return "SELECTED:" + text;
+        } catch (e) {
+            return "CRASH:" + e.message;
+        }
+    }, false, true, function (result) {
+        if (window.logger) window.logger.info("Plugin.js: Capture result: " + result);
+
+        // Parse manual string format
+        if (result && typeof result === 'string') {
+            if (result.startsWith("EXPANDED:") || result.startsWith("SELECTED:")) {
+                var text = result.substring(result.indexOf(":") + 1);
+                if (text !== "EMPTY") {
+                    processSuggestions(text);
+                }
+            }
+        }
+    });
+
+    window.Asc.plugin.onCommandCallback = function (result) {
+        if (window.logger) window.logger.info("onCommandCallback fired. Result: " + JSON.stringify(result));
     };
 
     window.Asc.plugin.button = function (id) {
         this.executeCommand("close", "");
     };
+
+    var selectionEvent = debounce(function () {
+        if (window.logger) window.logger.info("Selection Event fired.");
+        // This event is triggered when the cursor moves or selection changes
+        if (suggestionService && suggestionService.handleSelectionChange) {
+            suggestionService.handleSelectionChange();
+        } else {
+            if (window.logger) window.logger.error("suggestionService or handleSelectionChange missing within event.");
+        }
+    }, 500);
+
+    window.Asc.plugin.event_onTranslateSelection = selectionEvent;
+    window.Asc.plugin.event_onTargetPositionChanged = selectionEvent;
 
 })(window, undefined);
 
