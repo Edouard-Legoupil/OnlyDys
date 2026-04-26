@@ -13,7 +13,7 @@
     <!-- Define global functions needed by multiple scripts -->
     <script>
         // Text-to-speech function - must be defined before scripts that use it
-        window.lireMot = function(word) {
+        window.lireMot = function (word) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(word);
                 utterance.lang = 'fr-FR';
@@ -56,7 +56,8 @@
                         <input type="checkbox" id="toggle-suggestion-mode" checked>
                         <span class="slider round"></span>
                     </label>
-                    <span id="suggestion-mode-status" style="margin-left: 10px; font-weight: bold;">Au fur et à mesure</span>
+                    <span id="suggestion-mode-status" style="margin-left: 10px; font-weight: bold;">Au fur et à
+                        mesure</span>
                 </div>
             </div>
 
@@ -100,11 +101,14 @@
                     <!-- Global Options -->
                     <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee;">
                         <div class="control-group" style="margin-bottom: 10px;">
-                            <label for="palette-selector" style="font-size: 0.9em; display: block; margin-bottom: 5px; font-weight: bold;">
+                            <label style="font-size: 0.9em; display: block; margin-bottom: 8px; font-weight: bold;">
                                 Palette de couleurs (daltonisme) :
                             </label>
-                            <select id="palette-selector" class="form-control"
-                                    style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95em;">
+                            <!-- Carousel-style palette selector -->
+                            <div id="palette-carousel">
+                                <!-- Palette cards will be injected here by JS -->
+                            </div>
+                            <select id="palette-selector" style="display: none;">
                                 <option value="default">Default (Originale)</option>
                                 <option value="okabeIto">Okabe-Ito (Universelle)</option>
                                 <option value="tolsQualitative">Tol's Qualitative</option>
@@ -123,9 +127,8 @@
                             <label for="debounce-delay" style="font-size: 0.9em; display: block; margin-bottom: 5px;">
                                 Délai de rebond (ms) - Suggestions:
                             </label>
-                            <input type="number" id="debounce-delay" min="0" max="1000" value="150" 
-                                   class="form-control" 
-                                   style="width: 80px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                            <input type="number" id="debounce-delay" min="0" max="1000" value="150" class="form-control"
+                                style="width: 80px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
                             <span style="font-size: 0.8em; color: #666; margin-left: 8px;">
                                 (0 = désactivé)
                             </span>
@@ -185,7 +188,7 @@
                     </label>
                     <span id="global-style-status" style="margin-left: 10px; font-weight: bold;">Désactivé</span>
                 </div>
-                
+
                 <div id="font-selection-container" style="margin-top: 15px; display: none;">
                     <p style="font-size: 0.85em; color: #666; margin-bottom: 8px;">Sélectionner la police:</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -202,10 +205,32 @@
                             <span>AccessibleDfA</span>
                         </label>
                     </div>
+
+                    <div style="margin-top: 15px;">
+                        <p style="font-size: 0.85em; color: #666; margin-bottom: 8px;">Hauteur des lignes:</p>
+                        <select id="line-height-select" style="width: 100%; padding: 5px; font-size: 0.9em;">
+                            <option value="240">1.0x</option>
+                            <option value="360">1.5x</option>
+                            <option value="480" selected>2.0x</option>
+                            <option value="600">2.5x</option>
+                            <option value="720">3.0x</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <p style="font-size: 0.85em; color: #666; margin-bottom: 8px;">Espacement des lettres:</p>
+                        <select id="letter-spacing-select" style="width: 100%; padding: 5px; font-size: 0.9em;">
+                            <option value="0">Normal</option>
+                            <option value="12">Petit</option>
+                            <option value="24">Moyen</option>
+                            <option value="36" selected>Grand</option>
+                            <option value="48">Très grand</option>
+                        </select>
+                    </div>
                 </div>
-                
-                <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">Applique la police
-                    sélectionnée avec un espacement adapté.</p>
+
+                <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 5px;">Applique la police,
+                    la hauteur des lignes et l'espacement des lettres sélectionnés.</p>
 
                 <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
                 <h3>Simuler la dyslexie</h3>
@@ -259,7 +284,9 @@
 
                 <ul>
                     <li>
-                        <strong>1. Aide à l'écriture:</strong> Le mode "Au fur et à mesure" analyse et propose des corrections en temps réel. Le mode "Pour la sélection" analyse les 9 premiers mots de la sélection. Les corrections sont basées sur les 4 confusions les plus courantes:
+                        <strong>1. Aide à l'écriture:</strong> Le mode "Au fur et à mesure" analyse et propose des
+                        corrections en temps réel. Le mode "Pour la sélection" analyse les 9 premiers mots de la
+                        sélection. Les corrections sont basées sur les 4 confusions les plus courantes:
                         <ul>
                             <li> 🠲 <strong>Confusions Visuelles: ⚠️</strong> <span
                                     class="color-sample vermilion"></span>
@@ -286,7 +313,7 @@
                 <p>Le projet est <a href="https://github.com/Edouard-Legoupil/OnlyDys" target="_blank">open-source</a>.
                     Vous utilisez la version 0.1.0 et pouvez <a
                         href="https://github.com/Edouard-Legoupil/OnlyDys/issues/new" target="_blank">signaler ici un
-                        problème</a></p>
+                        problème en partageant les logs ci dessous</a></p>
 
 
                 <div style="margin-top: 20px; text-align: center;">
@@ -308,10 +335,34 @@
         </div>
     </div>
 
+    <!-- Logs Modal -->
+    <div id="logs-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div id="logs-container"
+                style="max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 11px; background-color: #f8f8f8; padding: 10px; border-radius: 4px;">
+                <!-- Logs will be displayed here -->
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button id="btn-confirm-download-logs"
+                    style="font-size: 11px; padding: 5px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Download as .log file
+                </button>
+                <button id="btn-close-logs-modal"
+                    style="font-size: 11px; padding: 5px 15px; margin-left: 10px; background-color: #ccc; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
-    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 10000;">
+    <div id="loading-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 10000;">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0047AB; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+            <div class="spinner"
+                style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0047AB; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px;">
+            </div>
             <p style="margin: 0; font-size: 14px; color: #333;">Chargement du dictionnaire...</p>
         </div>
     </div>

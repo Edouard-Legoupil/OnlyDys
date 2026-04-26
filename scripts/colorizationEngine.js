@@ -347,6 +347,7 @@
         /**
          * DEFAULT PALETTES - Now using palette system
          */
+        PALETTES: PALETTES,
         palettes: PALETTES.default,
         highlightPalettes: PALETTES.default.highlight,
 
@@ -454,6 +455,28 @@
             // Helper to get the appropriate palette based on highlighting mode
             const getPalette = (paletteKey) => {
                 const useHighlighting = config.options && config.options.useHighlighting;
+                const paletteName = config.options && config.options.colorPalette || currentPaletteName;
+                
+                if (window.logger) {
+                    window.logger.info("getPalette: paletteKey=" + paletteKey + ", useHighlighting=" + useHighlighting + ", paletteName=" + paletteName);
+                }
+                
+                // Check if we have the palette in PALETTES
+                const paletteSet = PALETTES[paletteName];
+                if (paletteSet) {
+                    if (useHighlighting && paletteSet.highlight && paletteSet.highlight[paletteKey]) {
+                        if (window.logger) window.logger.info("Using highlight palette for " + paletteKey);
+                        return paletteSet.highlight[paletteKey];
+                    }
+                    if (paletteSet[paletteKey]) {
+                        if (window.logger) window.logger.info("Using text palette for " + paletteKey);
+                        return paletteSet[paletteKey];
+                    }
+                }
+                
+                if (window.logger) window.logger.warn("Palette not found: " + paletteName + "[" + paletteKey + "], falling back");
+                
+                // Fallback to current palette
                 if (useHighlighting && ColorizationEngine.highlightPalettes[paletteKey]) {
                     return ColorizationEngine.highlightPalettes[paletteKey];
                 }

@@ -197,7 +197,7 @@
             );
 
             const shapes = [];
-            const palette = colorPalette || ['#D62728', '#2B83BA'];
+            const palette = (colorPalette && colorPalette.length > 0) ? colorPalette : ['#D62728', '#2B83BA'];
 
             positions.forEach((pos, index) => {
                 const color = palette[index % palette.length];
@@ -432,7 +432,7 @@
                 return textRuns;
             }
 
-            const palette = colorPalette || ['#D62728', '#2B83BA'];
+            const palette = (colorPalette && colorPalette.length > 0) ? colorPalette : ['#D62728', '#2B83BA'];
             const modifiedRuns = [];
 
             textRuns.forEach(run => {
@@ -538,7 +538,7 @@
                 return [{ text: text, formatting: {} }];
             }
 
-            const palette = colorPalette || ['#D62728', '#2B83BA'];
+            const palette = (colorPalette && colorPalette.length > 0) ? colorPalette : ['#D62728', '#2B83BA'];
             const runs = [];
             
             let currentPos = 0;
@@ -617,7 +617,7 @@
          * @returns {string} HTML string
          */
         renderArcPreviewHTML: function (text, syllables, colorPalette) {
-            const palette = colorPalette || ['#D62728', '#2B83BA'];
+            const palette = (colorPalette && colorPalette.length > 0) ? colorPalette : ['#D62728', '#2B83BA'];
             let html = '';
             
             let currentPos = 0;

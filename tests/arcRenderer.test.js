@@ -152,7 +152,8 @@ describe('ArcRenderer', function () {
                 ["<test"],
                 ["#FF0000"]
             );
-            expect(html).to.include("&lt;test&gt;&amp;\"&#039;");
+            expect(html).to.include("&lt;test");
+            expect(html).to.include("&amp;&quot;&#039;");
             expect(html).to.include("border-bottom: 2px solid #FF0000");
         });
     });

@@ -6,6 +6,7 @@
             mode: 'syllables',
             showArcs: false,
             highlightSilent: false,
+            useHighlighting: false,      // Use background highlighting instead of text color
             suggestionDebounceMs: 150,  // Default debounce delay in milliseconds
             colorPalette: 'default'     // Color palette: 'default', 'okabeIto', 'tolsQualitative', 'viridis', 'highContrast'
         },
@@ -37,6 +38,7 @@
             const radios = document.getElementsByName('ling-mode');
             const arcsCheck = document.getElementById('opt-arcs');
             const silentCheck = document.getElementById('opt-silent');
+            const highlightingCheck = document.getElementById('opt-highlighting');
             const applyBtn = document.getElementById('btn-apply-ling');
             const resetBtn = document.getElementById('btn-reset-ling');
             const paletteSelector = document.getElementById('palette-selector');
@@ -53,6 +55,7 @@
             }
             if (arcsCheck) arcsCheck.checked = this.config.showArcs;
             if (silentCheck) silentCheck.checked = this.config.highlightSilent;
+            if (highlightingCheck) highlightingCheck.checked = this.config.useHighlighting;
             
             // Set palette selector value
             if (paletteSelector) {
@@ -67,6 +70,7 @@
                         this.save();
                         this.updatePreview();
                         this.updateOptionsVisibility();
+                        this.renderPaletteCarousel();
                     }
                 });
             });
@@ -87,25 +91,30 @@
                 });
             }
 
-            // Palette selector binding
+            if (highlightingCheck) {
+                highlightingCheck.addEventListener('change', (e) => {
+                    this.config.useHighlighting = e.target.checked;
+                    this.save();
+                    this.updatePreview();
+                    this.renderPaletteCarousel();
+                    
+                    // Auto-apply to document when highlighting option changes
+                    if (window.logger) {
+                        window.logger.info("Highlighting option changed to: " + this.config.useHighlighting);
+                    }
+                    
+                    // Trigger a re-application of the colorization to the document
+                    if (typeof window.applyLinguisticsToDocument === 'function') {
+                        window.applyLinguisticsToDocument();
+                    }
+                });
+            }
+
+            // Palette selector binding (for backward compatibility)
             if (paletteSelector) {
                 paletteSelector.addEventListener('change', (e) => {
                     const paletteName = e.target.value;
-                    this.config.colorPalette = paletteName;
-                    this.save();
-                    
-                    // Update ColorizationEngine
-                    if (window.ColorizationEngine && window.ColorizationEngine.setCurrentPalette) {
-                        window.ColorizationEngine.setCurrentPalette(paletteName);
-                    }
-                    
-                    // Update legend and preview
-                    this.updateColorLegend();
-                    this.updatePreview();
-                    
-                    if (window.logger) {
-                        window.logger.info(`Palette changed to: ${paletteName}`);
-                    }
+                    this.selectPalette(paletteName);
                 });
             }
 
@@ -134,6 +143,7 @@
 
             this.updateOptionsVisibility();
             this.updatePreview();
+            this.renderPaletteCarousel();
         },
 
         updateOptionsVisibility: function () {
@@ -252,7 +262,9 @@
                 options: {
                     ...(this.config.options || {}),
                     // Pass showArcs to options for syllables mode
-                    showArcs: this.config.showArcs
+                    showArcs: this.config.showArcs,
+                    // Pass highlighting mode
+                    useHighlighting: this.config.useHighlighting
                 }
             };
 
@@ -268,9 +280,209 @@
                     console.error(err);
                     if (statusEl) statusEl.textContent = "Error: " + err;
                 });
+        },
+
+        // Palette definitions for carousel display
+        paletteDefinitions: {
+            'default': {
+                name: 'Default',
+                description: 'Originale'
+            },
+            'okabeIto': {
+                name: 'Okabe-Ito',
+                description: 'Universelle'
+            },
+            'tolsQualitative': {
+                name: "Tol's Qualitative",
+                description: 'Qualitative'
+            },
+            'viridis': {
+                name: 'Viridis',
+                description: 'Uniforme'
+            },
+            'highContrast': {
+                name: 'Haute Contraste',
+                description: 'Contraste'
+            }
+        },
+
+        // Render palette carousel
+        renderPaletteCarousel: function () {
+            const carousel = document.getElementById('palette-carousel');
+            if (!carousel) return;
+
+            const currentMode = this.config.mode;
+            const currentPalette = this.config.colorPalette || 'default';
+            const useHighlighting = this.config.useHighlighting || false;
+
+            // Clear existing cards
+            carousel.innerHTML = '';
+
+            // Get actual palette data from ColorizationEngine if available
+            const palettes = window.ColorizationEngine ? window.ColorizationEngine.PALETES : null;
+
+            // Create a card for each palette
+            Object.keys(this.paletteDefinitions).forEach(paletteKey => {
+                const paletteDef = this.paletteDefinitions[paletteKey];
+                const card = document.createElement('div');
+                card.className = 'palette-card';
+                if (paletteKey === currentPalette) {
+                    card.classList.add('selected');
+                }
+
+                // Get colors to display based on mode
+                const colorsToShow = this.getPaletteColorsForMode(paletteKey, currentMode, useHighlighting, palettes);
+
+                // Create preview swatches
+                const preview = document.createElement('div');
+                preview.className = 'palette-preview';
+                colorsToShow.forEach(color => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'palette-color-swatch';
+                    swatch.style.backgroundColor = color;
+                    preview.appendChild(swatch);
+                });
+                card.appendChild(preview);
+
+                // Add name
+                const name = document.createElement('div');
+                name.className = 'palette-name';
+                name.textContent = paletteDef.name;
+                card.appendChild(name);
+
+                // Add description
+                const desc = document.createElement('div');
+                desc.className = 'palette-description';
+                desc.textContent = paletteDef.description;
+                card.appendChild(desc);
+
+                // Add click handler
+                card.addEventListener('click', () => {
+                    this.selectPalette(paletteKey);
+                });
+
+                carousel.appendChild(card);
+            });
+
+            // Update the hidden select for backward compatibility
+            const select = document.getElementById('palette-selector');
+            if (select) {
+                select.value = currentPalette;
+            }
+
+            if (window.logger) {
+                window.logger.info("Palette carousel rendered with mode: " + currentMode + ", palette: " + currentPalette);
+            }
+        },
+
+        // Get colors to display based on mode
+        getPaletteColorsForMode: function (paletteKey, mode, useHighlighting, palettes) {
+            if (palettes && palettes[paletteKey]) {
+                const palette = palettes[paletteKey];
+                const paletteToUse = useHighlighting && palette.highlight ? palette.highlight : palette;
+                
+                // Return colors based on the current mode
+                switch (mode) {
+                    case 'grammar':
+                        if (paletteToUse.grammar) {
+                            return Object.values(paletteToUse.grammar).slice(0, 8);
+                        }
+                        return paletteToUse.phonemes || paletteToUse.syllables || [];
+                    case 'phonemes':
+                    case 'alternphonemes':
+                        return paletteToUse.phonemes || [];
+                    case 'syllables':
+                        return paletteToUse.syllables || [];
+                    case 'letters':
+                        return paletteToUse.letters || [];
+                    case 'words':
+                    case 'alternmots':
+                        return paletteToUse.words || [];
+                    case 'silent':
+                    case 'alternlettres':
+                        return [paletteToUse.silent || '#808080'];
+                    case 'vowels':
+                        return [paletteToUse.vowels || '#E377C2'];
+                    case 'consonants':
+                        return [paletteToUse.consonants || '#2B83BA'];
+                    case 'alternlines':
+                        if (window.ColorizationEngine && window.ColorizationEngine.lineColors) {
+                            return window.ColorizationEngine.lineColors.slice(0, 5);
+                        }
+                        return paletteToUse.phonemes || [];
+                    default:
+                        return paletteToUse.phonemes || paletteToUse.syllables || [];
+                }
+            }
+            // Fallback: return generic colors
+            return ['#D62728', '#2B83BA', '#2CA02C', '#FF7F0E', '#98DF8A'];
+        },
+
+        // Select a palette
+        selectPalette: function (paletteName) {
+            this.config.colorPalette = paletteName;
+            this.save();
+
+            // Update ColorizationEngine
+            if (window.ColorizationEngine && window.ColorizationEngine.setCurrentPalette) {
+                window.ColorizationEngine.setCurrentPalette(paletteName);
+            }
+
+            // Update UI
+            this.renderPaletteCarousel();
+            this.updateColorLegend();
+            this.updatePreview();
+
+            // Auto-apply to document
+            if (window.logger) {
+                window.logger.info("Palette changed to: " + paletteName);
+            }
+            if (typeof window.applyLinguisticsToDocument === 'function') {
+                window.applyLinguisticsToDocument();
+            }
         }
     };
 
     window.ConfigManager = ConfigManager;
+
+    // Initialize palette carousel when DOM is ready
+    function initPaletteCarousel() {
+        if (window.ConfigManager) {
+            window.ConfigManager.renderPaletteCarousel();
+            
+            // Re-render when mode changes
+            const modeRadios = document.getElementsByName('ling-mode');
+            if (modeRadios) {
+                modeRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        if (this.checked && window.ConfigManager) {
+                            window.ConfigManager.renderPaletteCarousel();
+                        }
+                    });
+                });
+            }
+            
+            // Re-render when highlighting changes
+            const highlightingCheck = document.getElementById('opt-highlighting');
+            if (highlightingCheck) {
+                highlightingCheck.addEventListener('change', function() {
+                    if (window.ConfigManager) {
+                        window.ConfigManager.renderPaletteCarousel();
+                    }
+                });
+            }
+        }
+    }
+
+    // Run initialization
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            ConfigManager.init();
+            initPaletteCarousel();
+        });
+    } else {
+        ConfigManager.init();
+        setTimeout(initPaletteCarousel, 100);
+    }
 
 })(window);

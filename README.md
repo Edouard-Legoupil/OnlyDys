@@ -1,5 +1,5 @@
 
-# OnlyDys - Plugin pour ONLYOFFICE
+# OnlyDys - Un Plugin ONLYOFFICE dédié aux troubles DYS
 
 (English version below at the end of the document)
 
@@ -8,7 +8,6 @@
 **OnlyDys** est un plugin respectueux de la vie privée pour ONLYOFFICE, conçu pour aider les utilisateurs souffrant de dyslexie, en particulier ceux qui écrivent en français. Il propose une suite complète d'outils pour rendre la lecture et l'écriture plus accessibles, incluant des suggestions de mots en temps réel, une mise en forme adaptée aux personnes dyslexiques et un codage couleur grammatical.
 
 Le plugin est compatible avec les versions self-hosted et de bureau des éditeurs ONLYOFFICE et peut être ajouté manuellement à n'importe quelle instance.
-
 
 
 ![alt text](diagramme.png)
@@ -95,7 +94,7 @@ Le plugin OnlyDys sera alors disponible dans l'onglet "Plugins".
 -----
 
 
-# OnlyDys Plugin for ONLYOFFICE
+# OnlyDys - A Plugin dedicated to support people with dyslexia in OnlyOffice
 
 ## Overview
 
@@ -181,3 +180,6 @@ To install the OnlyDys plugin:
  - Select the [OnlyDys.plugin](https://github.com/Edouard-Legoupil/OnlyDys/raw/refs/heads/main/deploy/OnlyDys.plugin) file.
     
 The OnlyDys plugin will be then available in the "Plugins" tab.
+
+-- 
+For more details, see the [Development Guide](DEVELOPMENT.md).

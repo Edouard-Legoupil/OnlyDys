@@ -21,9 +21,12 @@ The plugins integrates fonts with specific focus on dyslexia and dysgraphia:
 - [Accessible-DfA](https://github.com/Orange-OpenSource/font-accessible-dfa)
 - [Luciole](https://www.luciole-vision.com/#download)
 
+The dictionary used to provide suggestions is [**Bruxlex**](https://crcn.ulb.ac.be/lab_post/brulex-2/) and [Lexique4](http://www.lexique.org/). 
+
 ### Environment
 
-This tool was mostly coded using vibe coding in [Antigravity](https://antigravity.google/) and [jules](https://jules.google.com). You can clone the repository to contribute. **To build the plugin**:
+This tool was mostly coded using vibe coding. 
+You can clone the repository to contribute. **To build the plugin**:
  - Run the build script: `python3 package_plugin.py`
  - This will create the `OnlyDys.plugin` file in the `deploy` folder.
 

@@ -334,6 +334,45 @@ button:hover {
     font-style: italic;
 }
 
+/* Luciole font definitions */
+@font-face {
+    font-family: 'Luciole';
+    src: url('../font/Luciole/Luciole-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Luciole';
+    src: url('../font/Luciole/Luciole-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Luciole';
+    src: url('../font/Luciole/Luciole-Regular-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Luciole';
+    src: url('../font/Luciole/Luciole-Bold-Italic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* AccessibleDfA font definitions */
+@font-face {
+    font-family: 'AccessibleDfA';
+    src: url('../font/font-accessible-dfa/AccessibleDfA-VF.woff2') format('woff2'),
+         url('../font/font-accessible-dfa/AccessibleDfA-VF.woff') format('woff'),
+         url('../font/font-accessible-dfa/AccessibleDfA-VF.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* Legend */
 .color-legend {
     display: flex;
@@ -409,5 +448,115 @@ button:hover {
 #pictogram-container img {
     max-width: 100%;
     max-height: 300px;
+}
+
+/* Palette Carousel Styles */
+#palette-carousel {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+}
+
+#palette-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+
+#palette-carousel::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+#palette-carousel::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+.palette-card {
+    min-width: 140px;
+    max-width: 160px;
+    padding: 8px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.palette-card:hover {
+    border-color: #2B83BA;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.palette-card.selected {
+    border-color: #2B83BA;
+    background-color: #f8f9fa;
+    box-shadow: 0 0 0 2px #2B83BA;
+}
+
+.palette-preview {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.palette-color-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: 1px solid #eee;
+}
+
+.palette-name {
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #444;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.palette-description {
+    font-size: 0.7em;
+    color: #666;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Grammar legend specific */
+.grammar-legend {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+.grammar-legend-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.grammar-legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.grammar-legend-label {
+    font-size: 0.65em;
+    color: #666;
+    white-space: nowrap;
 }
 

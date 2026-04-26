@@ -46,52 +46,102 @@
             if (window.logger) window.logger.info("onSelectionChanged called. Mode: " + mode + ", isActive: " + isActive);
             if (!isActive) return;
 
-            if (mode === 'onthego') {
-                // Primary method: GetCurrentWord for on-the-go mode
-                window.Asc.plugin.executeMethod("GetCurrentWord", [], function (word) {
-                    if (window.logger) window.logger.info("GetCurrentWord result: " + word);
+            if (mode === 'onthego' || mode === 'selection') {
+                // First try GetSelectedText (works when user has selected text)
+                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
+                    if (window.logger) {
+                        window.logger.info((mode === 'onthego' ? "Onthego" : "Selection") + " Mode - GetSelectedText: '" + (text || '') + "'");
+                    }
                     
-                    if (word && typeof word === 'string' && word.trim().length > 0) {
-                        processSuggestions(word);
+                    if (text && text.trim().length > 0) {
+                        // We have selected text
+                        if (mode === 'selection') {
+                            // In selection mode, process all selected words
+                            const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
+                            if (window.logger) window.logger.info("Selection mode processing: '" + words + "'");
+                            processSuggestions(words);
+                        } else {
+                            // In on-the-go mode, use first word
+                            const words = text.trim().split(/\s+/);
+                            if (words.length > 0) {
+                                if (window.logger) window.logger.info("Onthego mode processing first word: '" + words[0] + "'");
+                                processSuggestions(words[0]);
+                            }
+                        }
                     } else {
-                        // Fallback to GetSelectedText if no word at cursor
-                        if (window.logger) window.logger.info("GetCurrentWord empty/failed. Trying GetSelectedText.");
-                        
-                        window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                            if (text && typeof text === 'string' && text.trim().length > 0) {
-                                processSuggestions(text);
-                            } else {
-                                // One-time UI Warning if both fail
-                                if (!suggestionService.hasWarnedRestrictedMode) {
-                                    suggestionService.hasWarnedRestrictedMode = true;
+                        // No selection - cursor only
+                        if (mode === 'onthego') {
+                            if (window.logger) window.logger.info("No selection, trying ExpandToWord");
+                            
+                            // Use callCommand to access document and expand selection to word
+                            window.Asc.plugin.callCommand(function () {
+                                try {
+                                    if (typeof Api === 'undefined') return "";
+                                    
+                                    var oDocument = Api.GetDocument();
+                                    if (!oDocument) return "";
+                                    
+                                    // Get selection/range
+                                    var oRange = null;
+                                    if (typeof oDocument.GetRangeBySelect === 'function') {
+                                        oRange = oDocument.GetRangeBySelect();
+                                    } else if (typeof oDocument.GetSelection === 'function') {
+                                        oRange = oDocument.GetSelection();
+                                    } else if (typeof oDocument.GetRange === 'function') {
+                                        oRange = oDocument.GetRange();
+                                    }
+                                    
+                                    if (!oRange) return "";
+                                    
+                                    // Expand to word and get text
+                                    if (typeof oRange.ExpandToWord === 'function') {
+                                        oRange.ExpandToWord();
+                                        var word = oRange.GetText();
+                                        if (window.logger) window.logger.info("ExpandToWord result: '" + (word || '') + "'");
+                                        return word || "";
+                                    }
+                                    
+                                    return "";
+                                } catch (err) {
+                                    if (window.logger) window.logger.error("ExpandToWord error: " + err.toString());
+                                    return "";
+                                }
+                            }, false, true, function (result) {
+                                if (window.logger) window.logger.info("Word detection result: '" + (result || '') + "'");
+                                
+                                if (result && typeof result === 'string' && result.trim().length > 0) {
+                                    // Got a word
+                                    if (window.logger) window.logger.info("Processing word: '" + result + "'");
+                                    processSuggestions(result);
+                                } else {
+                                    // Failed to get word, clear suggestions
+                                    if (window.logger) window.logger.info("No word found at cursor");
                                     const container = document.getElementById('suggestions-container');
                                     if (container) {
-                                        const warning = document.createElement('div');
-                                        warning.style.cssText = "background: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px; font-size: 12px;";
-                                        warning.innerHTML = "<strong>Détection Limitée</strong><br>Mode restreint : La détection automatique est limitée.<br>Si la détection échoue, sélectionnez le mot manuellement.";
-                                        container.prepend(warning);
+                                        container.innerHTML = '';
                                     }
                                 }
-                            }
-                        });
-                    }
-                });
-            } else {
-                // Selection mode
-                window.Asc.plugin.executeMethod("GetSelectedText", [], function (text) {
-                    if (window.logger) window.logger.info("Plugin.js: Selection Mode text: '" + text + "'");
-                    if (text) {
-                        const words = text.trim().split(/\s+/).slice(0, 9).join(' ');
-                        processSuggestions(words);
-                    } else {
-                        // Log empty selection handling
-                        processSuggestions("");
+                            });
+                        } else {
+                            // Selection mode with no selection - just clear
+                            if (window.logger) window.logger.info("Selection mode with no selection");
+                            processSuggestions("");
+                        }
                     }
                 });
             }
         }
 
         function updateMode() {
+            // Clear the last checked text when switching modes to force a refresh
+            lastCheckedText = "";
+            
+            // Clear suggestions container
+            const container = document.getElementById('suggestions-container');
+            if (container) {
+                container.innerHTML = '';
+            }
+            
             if (modeToggle.checked) {
                 mode = 'onthego';
                 modeStatus.textContent = 'Au fur et à mesure';
@@ -108,6 +158,10 @@
                 modeStatus.textContent = 'Pour la sélection';
                 // For selection mode, call directly (no debouncing needed)
                 onSelectionChanged();
+            }
+            
+            if (window.logger) {
+                window.logger.info("Mode switched to: " + mode);
             }
         }
 
@@ -292,31 +346,86 @@
 
     function initAboutTab() {
         const btnDownload = document.getElementById('btn-download-logs');
+        const logsModal = document.getElementById('logs-modal');
+        const logsContainer = document.getElementById('logs-container');
+        const btnConfirmDownload = document.getElementById('btn-confirm-download-logs');
+        const btnCloseLogsModal = document.getElementById('btn-close-logs-modal');
+
         if (btnDownload) {
-            // Remove old listener to prevent duplicates (simple cloning trick or check attribute)
+            // Remove old listener to prevent duplicates
             const newBtn = btnDownload.cloneNode(true);
             btnDownload.parentNode.replaceChild(newBtn, btnDownload);
 
             newBtn.addEventListener('click', function () {
                 if (window.logger && window.logger.getLogs) {
                     const logs = window.logger.getLogs();
-                    const blob = new Blob([logs], { type: 'text/plain' });
-                    const url = window.URL.createObjectURL(blob);
-
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = 'onlydys_debug_logs.txt';
-                    document.body.appendChild(a);
-                    a.click();
-
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    logger.info("Logs downloaded by user.");
+                    
+                    // Display logs in modal
+                    if (logsModal && logsContainer) {
+                        logsContainer.textContent = logs;
+                        logsModal.style.display = 'block';
+                        logger.info("Logs modal displayed.");
+                    } else {
+                        // Fallback if modal not found
+                        alert("Cannot display logs modal. Falling back to direct download.");
+                        downloadLogsDirectly(logs);
+                    }
                 } else {
                     alert("Logger not available.");
                 }
             });
+        }
+
+        // Handle download confirmation from modal
+        if (btnConfirmDownload) {
+            btnConfirmDownload.addEventListener('click', function () {
+                if (window.logger && window.logger.getLogs) {
+                    const logs = window.logger.getLogs();
+                    downloadLogsDirectly(logs);
+                    if (logsModal) logsModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Handle close modal
+        if (btnCloseLogsModal) {
+            btnCloseLogsModal.addEventListener('click', function () {
+                if (logsModal) logsModal.style.display = 'none';
+            });
+        }
+
+        // Close modal when clicking X button
+        if (logsModal) {
+            const closeButton = logsModal.querySelector('.close-button');
+            if (closeButton) {
+                closeButton.addEventListener('click', function () {
+                    logsModal.style.display = 'none';
+                });
+            }
+            
+            // Close modal when clicking outside
+            logsModal.addEventListener('click', function (e) {
+                if (e.target === logsModal) {
+                    logsModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Helper function for direct download
+        function downloadLogsDirectly(logs) {
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'onlydys_debug.log';
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            logger.info("Logs downloaded by user.");
         }
     }
 
@@ -767,8 +876,25 @@
                                 break;
                             }
                         }
+                        
+                        // Get line height and letter spacing values
+                        const lineHeightSelect = document.getElementById('line-height-select');
+                        const letterSpacingSelect = document.getElementById('letter-spacing-select');
+                        
+                        let lineHeight = 480; // default
+                        if (lineHeightSelect) {
+                            lineHeight = parseInt(lineHeightSelect.value) || 480;
+                        }
+                        
+                        let letterSpacing = 36; // default
+                        if (letterSpacingSelect) {
+                            letterSpacing = parseInt(letterSpacingSelect.value) || 36;
+                        }
+                        
                         window.OnlyDysStyles.setCurrentFont(selectedFont);
-                        window.OnlyDysStyles.applyStyleToDocument(selectedFont);
+                        window.OnlyDysStyles.setLineHeight(lineHeight);
+                        window.OnlyDysStyles.setLetterSpacing(letterSpacing);
+                        window.OnlyDysStyles.applyStyleToDocument(selectedFont, lineHeight, letterSpacing);
                     } else {
                         window.OnlyDysStyles.revertStyleInDocument();
                     }
@@ -782,10 +908,79 @@
             fontRadios.forEach(function(radio) {
                 radio.addEventListener('change', function() {
                     if (this.checked && window.OnlyDysStyles && styleToggle && styleToggle.checked) {
+                        const lineHeightSelect = document.getElementById('line-height-select');
+                        const letterSpacingSelect = document.getElementById('letter-spacing-select');
+                        
+                        let lineHeight = 480;
+                        if (lineHeightSelect) {
+                            lineHeight = parseInt(lineHeightSelect.value) || 480;
+                        }
+                        
+                        let letterSpacing = 36;
+                        if (letterSpacingSelect) {
+                            letterSpacing = parseInt(letterSpacingSelect.value) || 36;
+                        }
+                        
                         window.OnlyDysStyles.setCurrentFont(this.value);
-                        window.OnlyDysStyles.applyStyleToDocument(this.value);
+                        window.OnlyDysStyles.applyStyleToDocument(this.value, lineHeight, letterSpacing);
                     }
                 });
+            });
+        }
+
+        // Handle line height selection changes
+        const lineHeightSelect = document.getElementById('line-height-select');
+        if (lineHeightSelect) {
+            lineHeightSelect.addEventListener('change', function() {
+                if (window.OnlyDysStyles && styleToggle && styleToggle.checked) {
+                    const letterSpacingSelect = document.getElementById('letter-spacing-select');
+                    const fontRadios = document.getElementsByName('dys-font');
+                    
+                    let selectedFont = "OpenDyslexic";
+                    for (let i = 0; i < fontRadios.length; i++) {
+                        if (fontRadios[i].checked) {
+                            selectedFont = fontRadios[i].value;
+                            break;
+                        }
+                    }
+                    
+                    let lineHeight = parseInt(this.value) || 480;
+                    let letterSpacing = 36;
+                    if (letterSpacingSelect) {
+                        letterSpacing = parseInt(letterSpacingSelect.value) || 36;
+                    }
+                    
+                    window.OnlyDysStyles.setLineHeight(lineHeight);
+                    window.OnlyDysStyles.applyStyleToDocument(selectedFont, lineHeight, letterSpacing);
+                }
+            });
+        }
+
+        // Handle letter spacing selection changes
+        const letterSpacingSelect = document.getElementById('letter-spacing-select');
+        if (letterSpacingSelect) {
+            letterSpacingSelect.addEventListener('change', function() {
+                if (window.OnlyDysStyles && styleToggle && styleToggle.checked) {
+                    const lineHeightSelect = document.getElementById('line-height-select');
+                    const fontRadios = document.getElementsByName('dys-font');
+                    
+                    let selectedFont = "OpenDyslexic";
+                    for (let i = 0; i < fontRadios.length; i++) {
+                        if (fontRadios[i].checked) {
+                            selectedFont = fontRadios[i].value;
+                            break;
+                        }
+                    }
+                    
+                    let letterSpacing = parseInt(this.value) || 36;
+                    let lineHeight = 480;
+                    if (lineHeightSelect) {
+                        lineHeight = parseInt(lineHeightSelect.value) || 480;
+                    }
+                    
+                    window.OnlyDysStyles.setLetterSpacing(letterSpacing);
+                    window.OnlyDysStyles.applyStyleToDocument(selectedFont, lineHeight, letterSpacing);
+                }
             });
         }
 
@@ -820,7 +1015,7 @@
                 const category = this.value;
                 populateModes(category);
                 if (category === 'none') {
-                    applyLinguisticsToDocument(); // Will trigger Undo
+                    window.applyLinguisticsToDocument(); // Will trigger Undo
                 }
             });
         });
@@ -847,7 +1042,7 @@
                 if (idx === 0) input.checked = true;
 
                 input.addEventListener('change', function () {
-                    applyLinguisticsToDocument();
+                    window.applyLinguisticsToDocument();
                     updateInterfaceVisibility();
                     updateLingPreview();
                 });
@@ -857,21 +1052,21 @@
                 modeRadiosContainer.appendChild(label);
             });
 
-            applyLinguisticsToDocument();
+            window.applyLinguisticsToDocument();
             updateInterfaceVisibility();
             updateLingPreview();
         }
 
         document.getElementById('opt-arcs')?.addEventListener('change', function () {
-            applyLinguisticsToDocument();
+            window.applyLinguisticsToDocument();
             updateLingPreview();
         });
         document.getElementById('opt-silent')?.addEventListener('change', function () {
-            applyLinguisticsToDocument();
+            window.applyLinguisticsToDocument();
             updateLingPreview();
         });
         document.getElementById('ling-target-letters')?.addEventListener('input', function () {
-            applyLinguisticsToDocument();
+            window.applyLinguisticsToDocument();
             updateLingPreview();
         });
         
@@ -967,7 +1162,8 @@
 
     let isApplying = false;
 
-    function applyLinguisticsToDocument() {
+    // Expose function globally so configManager can call it
+    window.applyLinguisticsToDocument = function () {
         if (isApplying) return;
 
         const categoryRadios = document.getElementsByName('ling-category');
@@ -1002,8 +1198,13 @@
                 showArcs: document.getElementById('opt-arcs')?.checked || false,
                 highlightSilent: document.getElementById('opt-silent')?.checked || false,
                 targetLetters: document.getElementById('ling-target-letters')?.value || 'bdpq',
-                useHighlighting: document.getElementById('opt-highlighting')?.checked || false
+                useHighlighting: document.getElementById('opt-highlighting')?.checked || false,
+                colorPalette: document.getElementById('palette-selector')?.value || 'default'
             };
+
+            if (window.logger) {
+                window.logger.info("Applying colorization with mode: " + mode + ", useHighlighting: " + options.useHighlighting + ", palette: " + options.colorPalette);
+            }
 
             const config = { mode: mode, options: options };
             Asc.scope.colorizationScript = COLORIZATION_ENGINE_SOURCE;
@@ -1657,12 +1858,6 @@
     window.Asc.plugin.init = function (text) {
         if (window.logger) window.logger.info("Init called. Text len: " + (text ? text.length : 0) + ", isInit: " + isInitialized);
 
-        // Show loading overlay during initialization
-        const loadingEl = document.getElementById('loading-overlay');
-        if (loadingEl) {
-            loadingEl.style.display = 'block';
-        }
-
         if (!isInitialized) {
             isInitialized = true;
 
@@ -1670,8 +1865,8 @@
                 logger.info('Dictionary loaded, initializing tabs.');
             }).catch(error => {
                 logger.error('Failed to load dictionary:', error);
-            }).finally(() => {
-                // Hide loading overlay after dictionary loads or fails
+                // Ensure loading overlay is hidden on error
+                const loadingEl = document.getElementById('loading-overlay');
                 if (loadingEl) {
                     loadingEl.style.display = 'none';
                 }

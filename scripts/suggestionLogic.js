@@ -3,16 +3,37 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
 
 (function (logic) {
     let dictionary = [];
+    let isLoading = false; // Guard against multiple concurrent loads
 
     logic.loadDictionary = async function () {
+        // Skip if already loaded or loading
+        if (dictionary.length > 0) {
+            logger.info('Dictionary already loaded, skipping load.');
+            return;
+        }
+        
+        // Prevent multiple concurrent dictionary loads
+        if (isLoading) {
+            logger.info('Dictionary already loading, skipping duplicate request.');
+            return;
+        }
+        
         // Show loading overlay
         const loadingEl = document.getElementById('loading-overlay');
         if (loadingEl) {
             loadingEl.style.display = 'block';
         }
         
+        isLoading = true;
+        
         try {
-            const response = await fetch('data/dictionary_full.json');
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            const response = await fetch('data/dictionary_full.json', { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
             if (!response.ok) {
                 throw new Error('Network response was not ok: ' + response.statusText);
             }
@@ -20,7 +41,9 @@ window.OnlyDysLogic = window.OnlyDysLogic || {};
             logger.info('Dictionary loaded successfully', { wordCount: dictionary.length });
         } catch (error) {
             logger.error('Error loading dictionary:', error);
+            throw error; // Re-throw to allow caller to handle
         } finally {
+            isLoading = false;
             // Hide loading overlay
             if (loadingEl) {
                 loadingEl.style.display = 'none';

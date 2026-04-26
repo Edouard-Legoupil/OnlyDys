@@ -2,11 +2,26 @@ window.OnlyDysStyles = (function () {
     // Store the previous document state for proper restoration
     var previousState = null;
     var currentFont = "OpenDyslexic";
+    var isFormatted = false;
 
     // Available dyslexia-friendly fonts
     var AVAILABLE_FONTS = ["OpenDyslexic", "Luciole", "AccessibleDfA"];
 
-    function saveCurrentState() {
+    // Formatting settings with defaults
+    var formattingSettings = {
+        font: "OpenDyslexic",
+        lineHeight: 480, // 2.0em in twips
+        lineHeightType: "auto",
+        letterSpacing: 36 // in half-points
+    };
+
+    function saveOriginalState() {
+        // Only save state if we haven't already saved the original
+        if (previousState !== null) {
+            if (window.logger) window.logger.info("Original state already saved, skipping");
+            return;
+        }
+        
         // Save the current state before applying formatting
         window.Asc.plugin.callCommand(function () {
             try {
@@ -20,16 +35,20 @@ window.OnlyDysStyles = (function () {
                 }
 
                 // Save state by cloning paragraph formatting info
-                previousState = [];
+                // We'll store in Asc.scope temporarily, then copy to previousState after
+                Asc.scope.savedState = [];
                 var nParas = oDocument.GetElementsCount();
                 
                 for (var i = 0; i < nParas; i++) {
                     var oPara = oDocument.GetElement(i);
                     if (oPara && oPara.GetClassType() === "paragraph") {
-                        previousState.push({
+                        // Get spacingLine which returns {value, type}
+                        var spacingLine = oPara.GetSpacingLine ? oPara.GetSpacingLine() : null;
+                        
+                        Asc.scope.savedState.push({
                             fontFamily: oPara.GetFontFamily ? oPara.GetFontFamily() : null,
                             fontSize: oPara.GetFontSize ? oPara.GetFontSize() : null,
-                            spacingLine: oPara.GetSpacingLine ? oPara.GetSpacingLine() : null,
+                            spacingLine: spacingLine ? { value: spacingLine.GetValue ? spacingLine.GetValue() : spacingLine.value, type: spacingLine.GetType ? spacingLine.GetType() : spacingLine.type } : null,
                             spacing: oPara.GetSpacing ? oPara.GetSpacing() : null,
                             jc: oPara.GetJc ? oPara.GetJc() : null,
                             bold: oPara.GetBold ? oPara.GetBold() : null,
@@ -41,7 +60,7 @@ window.OnlyDysStyles = (function () {
                         for (var j = 0; j < runsCount; j++) {
                             var oRun = oPara.GetElement(j);
                             if (oRun && oRun.GetClassType() === "run") {
-                                previousState[i].runs.push({
+                                Asc.scope.savedState[i].runs.push({
                                     fontFamily: oRun.GetFontFamily ? oRun.GetFontFamily() : null
                                 });
                             }
@@ -57,15 +76,43 @@ window.OnlyDysStyles = (function () {
             if (result && typeof result === 'string' && result.indexOf("ERROR") === 0) {
                 console.error("Failed to save state:", result);
             }
+            // Copy saved state from Asc.scope to module variable
+            if (Asc.scope.savedState && Array.isArray(Asc.scope.savedState)) {
+                previousState = Asc.scope.savedState;
+                if (window.logger) window.logger.info("Original state saved: " + previousState.length + " paragraphs");
+            }
         });
     }
 
-    function applyStyleToDocument(fontName) {
+    function clearSavedState() {
+        previousState = null;
+        isFormatted = false;
+        if (window.logger) window.logger.info("Saved state cleared");
+    }
+
+    function applyStyleToDocument(fontName, lineHeight, letterSpacing) {
         // Use provided font or default to current selection
-        var fontToApply = fontName || currentFont;
+        var fontToApply = fontName || formattingSettings.font;
         
-        // Save current state before applying
-        saveCurrentState();
+        // Use provided settings or defaults
+        var lh = lineHeight !== undefined ? lineHeight : formattingSettings.lineHeight;
+        var ls = letterSpacing !== undefined ? letterSpacing : formattingSettings.letterSpacing;
+        
+        // Update formatting settings
+        formattingSettings.font = fontToApply;
+        formattingSettings.lineHeight = lh;
+        formattingSettings.letterSpacing = ls;
+        
+        // Save the original state only once (first time formatting is applied)
+        if (!isFormatted) {
+            saveOriginalState();
+            isFormatted = true;
+        }
+        
+        // Pass fontToApply via Asc.scope so it's accessible in the callback
+        Asc.scope.fontToApply = fontToApply;
+        Asc.scope.lineHeight = lh;
+        Asc.scope.letterSpacing = ls;
 
         window.Asc.plugin.callCommand(function () {
             try {
@@ -83,6 +130,11 @@ window.OnlyDysStyles = (function () {
                     return "ERROR: No paragraphs found in document";
                 }
 
+                // Get values from scope
+                var fontToApply = Asc.scope.fontToApply || "OpenDyslexic";
+                var lineHeight = Asc.scope.lineHeight !== undefined ? Asc.scope.lineHeight : 480;
+                var letterSpacing = Asc.scope.letterSpacing !== undefined ? Asc.scope.letterSpacing : 36;
+
                 // Apply selected font formatting to all paragraphs
                 for (var i = 0; i < nParas; i++) {
                     var oPara = oDocument.GetElement(i);
@@ -95,9 +147,9 @@ window.OnlyDysStyles = (function () {
                         }
                         oPara.SetFontSize(24); // 12pt in half-points
                         oPara.SetBold(false);
-                        oPara.SetSpacingLine(480, "auto"); // 2.0em line height
+                        oPara.SetSpacingLine(lineHeight, "auto"); // Line height
                         oPara.SetJc("left");
-                        oPara.SetSpacing(36); // Letter spacing
+                        oPara.SetSpacing(letterSpacing); // Letter spacing
 
                         // Apply to runs as well for comprehensive coverage
                         var runsCount = oPara.GetElementsCount();
@@ -111,7 +163,9 @@ window.OnlyDysStyles = (function () {
                 }
 
                 // Update current font
-                currentFont = fontToApply;
+                if (window.OnlyDysStyles) {
+                    window.OnlyDysStyles.currentFont = fontToApply;
+                }
 
                 return "SUCCESS";
             } catch (err) {
@@ -123,8 +177,8 @@ window.OnlyDysStyles = (function () {
                 if (window.logger) window.logger.error(result);
                 alert("Failed to apply formatting: " + result);
             } else {
-                console.log("Style applied successfully with font:", fontToApply);
-                if (window.logger) window.logger.info("Style applied to document with font: " + fontToApply);
+                console.log("Style applied successfully with font:", Asc.scope.fontToApply, "lineHeight:", Asc.scope.lineHeight, "letterSpacing:", Asc.scope.letterSpacing);
+                if (window.logger) window.logger.info("Style applied to document with font: " + Asc.scope.fontToApply + ", line height: " + Asc.scope.lineHeight + ", letter spacing: " + Asc.scope.letterSpacing);
             }
         });
     }
@@ -137,6 +191,9 @@ window.OnlyDysStyles = (function () {
             if (window.logger) window.logger.info("Style reverted using native Undo (no saved state)");
             return;
         }
+        
+        // Pass previousState via Asc.scope so it's accessible in the callback
+        Asc.scope.previousState = previousState;
 
         window.Asc.plugin.callCommand(function () {
             try {
@@ -149,12 +206,15 @@ window.OnlyDysStyles = (function () {
                     return "ERROR: Could not get document";
                 }
 
+                // Get state from scope
+                var states = Asc.scope.previousState || [];
+                
                 // Restore each paragraph's previous state
-                for (var i = 0; i < previousState.length; i++) {
+                for (var i = 0; i < states.length; i++) {
                     var oPara = oDocument.GetElement(i);
                     if (!oPara || oPara.GetClassType() !== "paragraph") continue;
 
-                    var state = previousState[i];
+                    var state = states[i];
                     
                     if (state.fontFamily && typeof oPara.SetFontFamily === "function") {
                         oPara.SetFontFamily(state.fontFamily);
@@ -162,8 +222,8 @@ window.OnlyDysStyles = (function () {
                     if (state.fontSize !== null) {
                         oPara.SetFontSize(state.fontSize);
                     }
-                    if (state.spacingLine !== null) {
-                        oPara.SetSpacingLine(state.spacingLine.value, state.spacingLine.type);
+                    if (state.spacingLine !== null && state.spacingLine.value !== undefined) {
+                        oPara.SetSpacingLine(state.spacingLine.value, state.spacingLine.type || "auto");
                     }
                     if (state.spacing !== null) {
                         oPara.SetSpacing(state.spacing);
@@ -199,7 +259,9 @@ window.OnlyDysStyles = (function () {
                 window.Asc.plugin.executeMethod("Undo");
             } else {
                 console.log("Style reverted successfully");
-                if (window.logger) window.logger.info("Style reverted to previous state");
+                if (window.logger) window.logger.info("Style reverted to original state");
+                // Mark as not formatted so next enable will save state again
+                isFormatted = false;
             }
         });
     }
@@ -218,11 +280,33 @@ window.OnlyDysStyles = (function () {
         return AVAILABLE_FONTS;
     }
 
+    function setLineHeight(value, type) {
+        formattingSettings.lineHeight = value !== undefined ? value : 480;
+        formattingSettings.lineHeightType = type || "auto";
+    }
+
+    function setLetterSpacing(value) {
+        formattingSettings.letterSpacing = value !== undefined ? value : 36;
+    }
+
+    function getFormattingSettings() {
+        return {
+            font: formattingSettings.font,
+            lineHeight: formattingSettings.lineHeight,
+            lineHeightType: formattingSettings.lineHeightType,
+            letterSpacing: formattingSettings.letterSpacing
+        };
+    }
+
     return {
         applyStyleToDocument,
         revertStyleInDocument,
         getCurrentFont,
         setCurrentFont,
-        getAvailableFonts
+        getAvailableFonts,
+        setLineHeight,
+        setLetterSpacing,
+        getFormattingSettings,
+        clearSavedState
     };
 })();
