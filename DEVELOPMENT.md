@@ -64,7 +64,7 @@ The OnlyDys plugin follows a modular architecture where different components han
 | **OnlyDysUI** | [scripts/suggestionUI.js](scripts/suggestionUI.js) | Manages the dynamic creation of HTML elements for suggestions, including visual icons and read-aloud buttons. |
 | **Logger** | [scripts/logger.js](scripts/logger.js) | Provides centralized logging for debugging, with the ability to download logs via the "About" tab. |
 | **Pictogram Service** | [scripts/pictogramService.js](scripts/pictogramService.js) | Helper to fetch ARASAAC pictograms for words to provide visual aids. |
-
+| **ArcRenderer** | [scripts/arcRenderer.js](scripts/arcRenderer.js) | Core logic for rendering syllable arcs using SVG, handling complex spacing and curvature calculations. |
 
 
 ```mermaid

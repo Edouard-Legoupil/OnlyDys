@@ -9,6 +9,11 @@
 
 Le plugin est compatible avec les versions self-hosted et de bureau des éditeurs ONLYOFFICE et peut être ajouté manuellement à n'importe quelle instance.
 
+
+
+![alt text](diagramme.png)
+
+
 ## Fonctionnalités
 
 ### 📝 **Système Intelligent de Suggestions**
